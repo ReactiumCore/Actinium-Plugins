@@ -122,8 +122,8 @@ const CONFORM = ({ params, props }) => {
 // prettier-ignore
 const HELP = () => console.log(`
 Examples:
-  $ ${chalk.white('arcli')} ${chalk.magenta(NAME)} ${chalk.cyan('--ver')} patch
-  $ ${chalk.white('arcli')} ${chalk.magenta(NAME)} ${chalk.cyan('--ver')} minor
+  $ ${chalk.white('arcli')} ${chalk.magenta(NAME)} ${chalk.cyan('--ver')} patch ${chalk.cyan('--include')} "actinium-block, actinium-rest"
+  $ ${chalk.white('arcli')} ${chalk.magenta(NAME)} ${chalk.cyan('--ver')} minor ${chalk.cyan('--exclude')} "actinium-wizard, actinium-users"
   $ ${chalk.white('arcli')} ${chalk.magenta(NAME)} ${chalk.cyan('--ver')} major
 `);
 
