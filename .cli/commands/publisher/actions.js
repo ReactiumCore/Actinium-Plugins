@@ -2,8 +2,8 @@ const path = require('path');
 const chalk = require('chalk');
 const fs = require('fs-extra');
 const op = require('object-path');
+const copy = require('clipboardy');
 const inquirer = require('inquirer');
-const copy = require('node-clipboard');
 const pkg = require('../../../package');
 
 const normalize = (...p) => path.normalize(path.join(process.cwd(), ...p));
@@ -57,7 +57,7 @@ module.exports = () => ({
             );
         }
     },
-    deps: ({ action, params, props }) => {
+    deps: async ({ action, params, props }) => {
         const deps = mem.plugins.reduce((obj, dir) => {
             const pkgFilePath = dest(dir, 'package.json');
             const { version = 'latest' } = require(pkgFilePath);
@@ -66,7 +66,7 @@ module.exports = () => ({
             return obj;
         }, {});
 
-        copy(JSON.stringify(deps, null, 2));
+        copy.writeSync(JSON.stringify(deps, null, 2))
 
         props.message(
             chalk.cyan('Manually update Actinium package.json'),
