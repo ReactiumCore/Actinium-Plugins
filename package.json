@@ -61,7 +61,7 @@
     "uuid": "^3.3.3"
   },
   "devDependencies": {
-    "@atomic-reactor/cli": "^2.2.31",
+    "@atomic-reactor/cli": "^2.2.36",
     "action-sequence": "^1.1.1",
     "chalk": "^2.4.2",
     "clipboardy": "^2.3.0",

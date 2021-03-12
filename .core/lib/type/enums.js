@@ -15,7 +15,7 @@ const STATUS = {
     TRASH: 'TRASH',
     DRAFT: 'DRAFT',
     PUBLISHED: 'PUBLISHED',
-}
+};
 
 const DEFAULT_TYPE_REGISTRY = Symbol('DEFAULT_TYPE_REGISTRY');
 

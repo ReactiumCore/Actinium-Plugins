@@ -470,7 +470,6 @@ Type.validateFields = (fields = {}, regions = {}) => {
 };
 
 Type.saveSchema = async type => {
-
     // ignore malformed types
     if (
         type.machineName === 'undefined' ||
