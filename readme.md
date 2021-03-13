@@ -32,4 +32,6 @@ If you need to retrieve the plugin manifest for any random reason run:
 arcli deps
 ```
 
+The deps command will ask you for the semver value of the Actinium version the published plugins should work with.
+
 _**Note**: The plugin manifest will be copied to the clipboard._
