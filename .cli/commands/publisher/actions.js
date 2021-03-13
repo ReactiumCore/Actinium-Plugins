@@ -60,9 +60,12 @@ module.exports = () => ({
     deps: async ({ action, params, props }) => {
         const deps = mem.plugins.reduce((obj, dir) => {
             const pkgFilePath = dest(dir, 'package.json');
+            if (!fs.existsSync(pkgFilePath)) return obj;
+
             const { version = 'latest' } = require(pkgFilePath);
             const name = `@atomic-reactor/${dir}`;
             obj[name] = version;
+
             return obj;
         }, {});
 

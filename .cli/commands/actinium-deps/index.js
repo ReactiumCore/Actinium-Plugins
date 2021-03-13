@@ -56,6 +56,8 @@ const ACTION = async ({ opt, props }) => {
 
     const deps = plugins().reduce((obj, dir) => {
         const pkgFilePath = dest(dir, 'package.json');
+        if (!fs.existsSync(pkgFilePath)) return obj;
+
         const pkg = require(pkgFilePath);
 
         const { version = 'latest' } = pkg;
@@ -94,9 +96,11 @@ const FLAGS_TO_PARAMS = ({ opt = {}, props }) =>
         let val = opt[key];
         val = typeof val === 'function' ? undefined : val;
 
-        switch (key) {
-            default:
-                obj[key] = val;
+        if (val) {
+            switch (key) {
+                default:
+                    obj[key] = val;
+            }
         }
 
         return obj;
