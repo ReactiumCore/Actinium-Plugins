@@ -1,0 +1,21 @@
+{
+  "name": "@atomic-reactor/actinium-roles",
+  "version": "1.0.5",
+  "description": "Actinium core plugin",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "actinium",
+    "core"
+  ],
+  "author": "Reactium LLC",
+  "license": "MIT",
+  "reactium": {
+    "version": "3.2.6"
+  },
+  "actinium": {
+    "version": ">=3.7.0"
+  }
+}
