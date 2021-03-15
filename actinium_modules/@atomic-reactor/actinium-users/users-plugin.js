@@ -205,6 +205,7 @@ Actinium.Hook.register('deactivate', registerBlueprints(false));
 
 const PLUGIN_ROUTES = require('./routes');
 const saveRoutes = async () => {
+    if (typeof Actinium.Route === 'undefined') return;
     for (const route of PLUGIN_ROUTES) {
         await Actinium.Route.save(route);
     }

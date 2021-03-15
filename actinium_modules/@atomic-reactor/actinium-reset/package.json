@@ -1,6 +1,6 @@
 {
   "name": "@atomic-reactor/actinium-reset",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Actinium core plugin",
   "main": "index.js",
   "scripts": {

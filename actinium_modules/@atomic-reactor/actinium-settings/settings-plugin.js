@@ -221,6 +221,7 @@ const registerBlueprints = (reg = true) => ({ ID }) => {
 };
 
 const saveRoutes = async () => {
+    if (typeof Actinium.Route === 'undefined') return;
     const PLUGIN_ROUTES = require('./routes');
     for (const route of PLUGIN_ROUTES) {
         await Actinium.Route.save(route);
