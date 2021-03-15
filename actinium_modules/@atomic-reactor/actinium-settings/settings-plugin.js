@@ -213,11 +213,16 @@ const beforeSave = async req => {
 };
 
 const registerBlueprints = (reg = true) => ({ ID }) => {
+    if (typeof Actinium.Blueprint === 'undefined') return;
+
     if (ID && ID !== PLUGIN.ID) return;
     const PLUGIN_BLUEPRINTS = require('./blueprints');
-    if (reg === true)
+
+    if (reg === true) {
         PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.register(bp.ID, bp));
-    else PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.unregister(bp.ID));
+    } else {
+        PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.unregister(bp.ID));
+    }
 };
 
 const saveRoutes = async () => {
