@@ -1,5 +1,3 @@
-const chalk = require('chalk');
-const op = require('object-path');
 const PLUGIN = require('./info');
 const COLLECTION = PLUGIN.ID;
 
@@ -13,7 +11,7 @@ const _optionPair = (options, req) => {
 };
 
 Route.retrieve = async (params, opts, req) => {
-    const { masterOptions, options } = _optionPair(opts, req);
+    const { options } = _optionPair(opts, req);
     const { route: routePath, objectId } = params;
     const query = new Parse.Query(COLLECTION);
 
@@ -32,7 +30,7 @@ Route.retrieve = async (params, opts, req) => {
 };
 
 Route.save = async (params, opts, req) => {
-    const { masterOptions, options } = _optionPair(opts, req);
+    const { options } = _optionPair(opts, req);
 
     const {
         route: routePath,

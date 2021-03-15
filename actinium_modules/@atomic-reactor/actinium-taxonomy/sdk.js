@@ -20,10 +20,13 @@ const Taxonomy = {
 };
 
 Taxonomy.install = async () => {
-    const { count = 0 } = await Taxonomy.Type.list({ page: 1, limit: 1 });
-    if (count > 0) return;
-
     const options = { useMasterKey: true };
+
+    const { count = 0 } = await Taxonomy.Type.list(
+        { page: 1, limit: 1 },
+        options,
+    );
+    if (count > 0) return;
 
     Taxonomy.warning = true;
 
@@ -307,11 +310,11 @@ Taxonomy.Content.retrieve = async (params, options) => {
         let tax =
             count > 0
                 ? await rel
-                      .query()
-                      .skip(0)
-                      .limit(count)
-                      .include('type')
-                      .find(options)
+                    .query()
+                    .skip(0)
+                    .limit(count)
+                    .include('type')
+                    .find(options)
                 : [];
 
         tax = tax.map(item => ({

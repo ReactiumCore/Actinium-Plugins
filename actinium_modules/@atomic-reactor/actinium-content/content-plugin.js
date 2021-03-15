@@ -88,6 +88,7 @@ Actinium.Hook.register('deactivate', async ({ ID }) => {
 
 Actinium.Hook.register('running', async () => {
     if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+
     const schedule = await Actinium.Setting.get(
         ENUMS.CRON_SETTING,
         '*/30 * * * *',

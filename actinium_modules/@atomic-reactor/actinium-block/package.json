@@ -1,6 +1,6 @@
 {
   "name": "@atomic-reactor/actinium-block",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Actinium core plugin",
   "main": "index.js",
   "scripts": {

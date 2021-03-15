@@ -98,10 +98,15 @@ Setting.get = async (key, defaultValue, options) => {
     let obj = await new Actinium.Query(COLLECTION)
         .equalTo('key', group)
         .first(options);
+
+    if (!obj && defaultValue) return defaultValue;
+
     obj = obj ? obj.toJSON() : {};
 
     const result = op.get(obj, 'value.value');
-    if (settingPath.length) return op.get(result, settingPath);
+    if (settingPath.length > 0) {
+        return op.get(result, settingPath, defaultValue);
+    }
 
     Actinium.Cache.set(
         `setting.${key}`,
@@ -153,7 +158,8 @@ Setting.list = async (req = {}, fullAccess) => {
 
     let results = await qry.find({ useMasterKey: true });
 
-    fullAccess = fullAccess || CloudHasCapabilities(req, `${COLLECTION}.retrieve`);
+    fullAccess =
+        fullAccess || CloudHasCapabilities(req, `${COLLECTION}.retrieve`);
     while (results.length > 0) {
         results.forEach(item => {
             const { key, value } = item.toJSON();

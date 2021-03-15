@@ -22,6 +22,8 @@ const {
 const Media = { ENUMS, Content: {}, Image: sharp, User: {} };
 
 const getDirectories = async options => {
+    options = options || { useMasterKey: true };
+
     const cached = Actinium.Cache.get('media-directories-fetch');
     if (cached) return cached;
 
@@ -39,6 +41,8 @@ const getDirectories = async options => {
 };
 
 const getMedia = async (params = {}, options) => {
+    options = options || { useMasterKey: true };
+    
     if (!op.get(params, 'orderBy')) {
         op.set(params, 'orderBy', 'updatedAt');
     }
@@ -336,7 +340,7 @@ Media.directorySave = async params => {
 
     if (permissions.length > 0) {
         permissions.forEach(perm => {
-            const { label, name, objectId, permission, type } = perm;
+            const { name, objectId, permission, type } = perm;
             const action = `${type}-${permission}`;
 
             switch (action) {
@@ -602,21 +606,18 @@ Actinium.Media.get({ objectId: 'nr3NEdj13R'});
 Media.get = async (params, options) => {
     if (Object.keys(params).length < 1) {
         throw new Error('no search criteria specified.');
-        return;
     }
 
     if (op.has(params, 'directory') && !op.has(params, 'filename')) {
         throw new Error(
             'filename is required when retrieving a file by the directory value',
         );
-        return;
     }
 
     if (op.has(params, 'filename') && !op.has(params, 'directory')) {
         throw new Error(
             'directory is required when retrieving a file by the filename value',
         );
-        return;
     }
 
     const qry = new Parse.Query(ENUMS.COLLECTION.MEDIA).descending('updatedAt');
@@ -853,7 +854,7 @@ const thumbnail = await Actinium.Media.crop({
 ...
  */
 Media.crop = async params => {
-    let { ext, prefix, url, options = { width: 400, height: 400 } } = params;
+    let { ext, url, options = { width: 400, height: 400 } } = params;
 
     url = typeof url === 'string' ? url : url.url();
     url = String(url).replace('undefined/', `${ENV.PARSE_MOUNT}/`);
@@ -886,7 +887,7 @@ Media.crop = async params => {
 
         if (!buffer) return;
 
-        const fileData = [...buffer.entries()].map(([index, byte]) => byte);
+        const fileData = [...buffer.entries()].map(([, byte]) => byte);
         const bucketname = await getBucketName('thumbnail', filename);
         return new Actinium.File(bucketname, fileData).save();
     } catch (err) {

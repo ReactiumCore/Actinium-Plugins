@@ -168,14 +168,14 @@ Actinium.start = options =>
                     // Load Capability
                     await Actinium.Capability.load(false, 'boot');
 
+                    // Runtime schema initialization
+                    await Actinium.Hook.run('schema');
+
                     // Load Collection Schemas
                     await Actinium.Collection.load();
 
                     // Run start-up hook
                     await Actinium.Hook.run('start');
-
-                    // Runtime schema initialization
-                    await Actinium.Hook.run('schema');
 
                     // Run tests in local development
                     await Actinium.Harness.run();

@@ -1,7 +1,6 @@
 const chalk = require('chalk');
 const _ = require('underscore');
 const op = require('object-path');
-const { CloudRunOptions } = require(`${ACTINIUM_DIR}/lib/utils`);
 
 const PLUGIN = require('./info');
 
@@ -59,7 +58,7 @@ Actinium.Hook.register('deactivate', registerBlueprints(false));
 const PLUGIN_ROUTES = require('./routes');
 const saveRoutes = async () => {
     for (const route of PLUGIN_ROUTES) {
-        await Actinium.Route.save(route);
+        await Actinium.Route.save(route, { useMasterKey: true });
     }
 };
 
@@ -166,7 +165,7 @@ Actinium.Hook.register(
         const del = tax.filter(item => op.get(item, 'deleted') === true);
 
         // prettier-ignore
-        const [addTAX, delTAX] = await Promise.all([
+        await Promise.all([
             add.map(({ field, slug, type }) => Taxonomy.Content.attach({ content, field, slug, type }), options),
             del.map(({ field, slug, type }) => Taxonomy.Content.detach({ content, field, slug, type }), options)
         ]);
@@ -208,7 +207,7 @@ Actinium.Hook.register(
 // taxonomy-query hook
 Actinium.Hook.register(
     'taxonomy-query',
-    async (qry, params, options) => {
+    async (qry, params) => {
         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
 
         qry.include('type');
@@ -244,7 +243,7 @@ Actinium.Hook.register(
 // taxonomy-type-query hook
 Actinium.Hook.register(
     'taxonomy-type-query',
-    async (qry, params, options) => {
+    async (qry, params) => {
         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
 
         if (op.get(params, 'name')) {
@@ -260,7 +259,7 @@ Actinium.Hook.register(
 // taxonomy-type-list hook
 Actinium.Hook.register(
     'taxonomy-type-list',
-    async (resp, params, options) => {
+    async (resp, params) => {
         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
 
         if (op.get(params, 'verbose') !== true) return;
@@ -286,7 +285,7 @@ Actinium.Hook.register(
 // taxonomy-type-retrieve-query hook
 Actinium.Hook.register(
     'taxonomy-type-retrieve-query',
-    async (qry, params, options) => {
+    async (qry, params) => {
         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
 
         if (op.get(params, 'name')) {
@@ -302,7 +301,7 @@ Actinium.Hook.register(
 // taxonomy-retrieve-query hook
 Actinium.Hook.register(
     'taxonomy-retrieve-query',
-    async (qry, params, options) => {
+    async (qry, params) => {
         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
 
         qry.include('type');
