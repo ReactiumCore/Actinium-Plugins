@@ -150,7 +150,12 @@ Content.saveSchema = async contentTypeObj => {
         indexes,
     } = await Content.getSchema(contentTypeObj);
 
-    Actinium.Collection.register(collection, permissions, schema, indexes);
+    return Actinium.Collection.register(
+        collection,
+        permissions,
+        schema,
+        indexes,
+    );
 };
 
 Content.getSchema = async contentTypeObj => {
@@ -3332,10 +3337,7 @@ Actinium.Harness.test(
         assert.equal(trashed.length, 2, 'Main item and 1 revisions.');
         assert.ok(trashed.find(trash => trash.get('type') === 'delete'));
 
-        await Actinium.Content.restore(
-            content,
-            Actinium.Utils.MasterOptions(),
-        );
+        await Actinium.Content.restore(content, Actinium.Utils.MasterOptions());
 
         const revisionQuery = new Parse.Query('Recycle');
         revisionQuery.equalTo('collection', collection);

@@ -1,10 +1,7 @@
-const path = require('path');
-const chalk = require('chalk');
-const fs = require('fs-extra');
-const op = require('object-path');
 const copy = require('clipboardy');
-const inquirer = require('inquirer');
 const pkg = require('../../../package');
+
+const { chalk, fs, op, path } = arcli;
 
 const normalize = (...p) => path.normalize(path.join(process.cwd(), ...p));
 
@@ -69,7 +66,7 @@ module.exports = () => ({
             return obj;
         }, {});
 
-        copy.writeSync(JSON.stringify(deps, null, 2))
+        copy.writeSync(JSON.stringify(deps, null, 2));
 
         props.message(
             chalk.cyan('Manually update Actinium package.json'),

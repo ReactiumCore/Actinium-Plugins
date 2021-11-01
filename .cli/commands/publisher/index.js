@@ -152,7 +152,7 @@ const ACTION = async ({ opt, props }) => {
         .then(success => [null, success])
         .catch(error => [error]);
 
-    if (!success) {
+    if (!success && errors) {
         error(X, errors);
     } else {
         message(CHK, chalk.magenta(name), 'complete!');
