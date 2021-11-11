@@ -281,7 +281,7 @@ Content.getSchema = async contentTypeObj => {
                     type: existingType,
                     targetClass: existingTargetClass,
                 } = existingFieldSchema;
-                const {
+                let {
                     type: proposedType,
                     targetClass: proposedTargetClass,
                 } = schemaTemplate.fieldTypes[fieldType];
@@ -296,8 +296,8 @@ Content.getSchema = async contentTypeObj => {
 
                     // 3. the field schema is unchanged
                     fieldSchemaUnchanged:
-                        existingType === proposedType &&
-                        existingTargetClass === proposedTargetClass,
+                        proposedType === existingType &&
+                        proposedTargetClass === existingTargetClass,
                 };
 
                 if (

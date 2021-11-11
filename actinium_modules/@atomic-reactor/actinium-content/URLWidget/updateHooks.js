@@ -14,10 +14,9 @@ Actinium.Hook.register('update', async (plugin, req, old) => {
         let skip = 0;
         let routes = await rtQuery.find(options);
 
-        const ids = {};
         while (routes.length > 0) {
             for (const route of routes) {
-                const { collection, contentId } = route.get('meta');
+                const { collection, contentId } = route.get('meta') || {};
                 if (collection && contentId) {
                     const obj = new Parse.Object(collection);
                     obj.id = contentId;

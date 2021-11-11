@@ -11,7 +11,8 @@
         "docs": "arcli docs -s .core,src/app,node_modules/@atomic-reactor -d docs",
         "local": "nodemon",
         "local-dev": "ACTINIUM_ENV_ID=dev nodemon",
-        "publisher": "arcli publisher"
+        "publisher": "arcli publisher",
+        "pub:content": "cd ./actinium_modules/@atomic-reactor/actinium-content && arcli publish && cd ../../"
     },
     "dependencies": {
         "@atomic-reactor/actinium-auth": "^1.1.1",

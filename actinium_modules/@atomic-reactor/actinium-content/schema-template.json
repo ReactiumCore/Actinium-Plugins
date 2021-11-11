@@ -60,6 +60,9 @@
             "type": "Object"
         },
         "Select": {
+            "type": "String"
+        },
+        "SelectArray": {
             "type": "Array"
         },
         "Array": {
