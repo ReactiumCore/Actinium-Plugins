@@ -571,6 +571,16 @@ Content.labelBranch = async (params, options) => {
     const content = new Actinium.Object(op.get(typeObj, 'collection'));
     content.id = contentObj.objectId;
     content.set('branches', branches);
+
+    await Actinium.Hook.run(
+        'content-before-save',
+        content,
+        typeObj,
+        false,
+        params,
+        options,
+    );
+
     await content.save(null, options);
 
     const userId = op.get(
@@ -655,6 +665,16 @@ Content.deleteBranch = async (params, options) => {
     content.id = contentObj.objectId;
     op.del(branches, [branch]);
     content.set('branches', branches);
+
+    await Actinium.Hook.run(
+        'content-before-save',
+        content,
+        typeObj,
+        false,
+        params,
+        options,
+    );
+
     await content.save(null, options);
 
     const revisions = revs.map(objectId => {
@@ -745,6 +765,16 @@ Content.cloneBranch = async (params, options) => {
     const content = new Actinium.Object(op.get(typeObj, 'collection'));
     content.id = contentObj.objectId;
     content.set('branches', branches);
+
+    await Actinium.Hook.run(
+        'content-before-save',
+        content,
+        typeObj,
+        false,
+        params,
+        options,
+    );
+
     await content.save(null, options);
 
     op.set(contentObj, 'branches', branches);
@@ -1522,6 +1552,15 @@ Content.changeSlug = async (params, options) => {
     content.set('uuid', uuid);
     op.set(contentObj, 'uuid', uuid);
 
+    await Actinium.Hook.run(
+        'content-before-save',
+        content,
+        typeObj,
+        false,
+        params,
+        options,
+    );
+
     await content.save(null, options);
     await type.save(null, masterOptions);
 
@@ -1780,6 +1819,15 @@ Content.setCurrent = async (params, options) => {
 
     content.set('history', contentObj.history);
 
+    await Actinium.Hook.run(
+        'content-before-save',
+        content,
+        typeObj,
+        false,
+        params,
+        options,
+    );
+
     let saved, errors;
     try {
         saved = await content.save(null, options);
@@ -1869,6 +1917,15 @@ Content.setPermissions = async (params, options) => {
         }
 
         content.setACL(groupACL);
+
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
 
         let saved, errors;
         try {
@@ -2456,6 +2513,24 @@ Content.publish = async (params, options) => {
     content.set('status', ENUMS.STATUS.PUBLISHED);
     op.set(contentObj, 'status', ENUMS.STATUS.PUBLISHED);
 
+    await Actinium.Hook.run(
+        'content-before-save',
+        content,
+        typeObj,
+        false,
+        params,
+        options,
+    );
+
+    await Actinium.Hook.run(
+        'content-before-save',
+        contentObj,
+        typeObj,
+        false,
+        params,
+        options,
+    );
+
     await content.save(null, options);
 
     const userId = op.get(
@@ -2463,6 +2538,7 @@ Content.publish = async (params, options) => {
         'user.objectId',
         op.get(params, 'user.id', op.get(params, 'userId')),
     );
+
     const changeType = op.get(params, 'reason', ENUMS.CHANGES.PUBLISHED);
     await Actinium.Content.Log.add(
         {
@@ -2562,6 +2638,15 @@ Content.setStatus = async (params, options) => {
         currentStatus,
     );
 
+    await Actinium.Hook.run(
+        'content-before-save',
+        content,
+        typeObj,
+        false,
+        params,
+        options,
+    );
+
     await content.save(null, options);
 
     const userId = op.get(
@@ -2651,6 +2736,15 @@ Content.unpublish = async (params, options) => {
     content.id = contentObj.objectId;
     content.set('status', ENUMS.STATUS.DRAFT);
     op.set(contentObj, 'status', ENUMS.STATUS.DRAFT);
+
+    await Actinium.Hook.run(
+        'content-before-save',
+        content,
+        typeObj,
+        false,
+        params,
+        options,
+    );
 
     await content.save(null, options);
 
@@ -2763,6 +2857,16 @@ Content.schedule = async (params, options) => {
     const content = new Actinium.Object(collection);
     content.id = contentObj.objectId;
     content.set('publish', publish);
+
+    await Actinium.Hook.run(
+        'content-before-save',
+        content,
+        typeObj,
+        false,
+        params,
+        options,
+    );
+
     await content.save(null, options);
 
     await Actinium.Content.Log.add(
@@ -2827,6 +2931,16 @@ Content.unschedule = async (params, options) => {
     const content = new Actinium.Object(typeObj.collection);
     content.id = contentObj.objectId;
     content.set('publish', publish);
+
+    await Actinium.Hook.run(
+        'content-before-save',
+        content,
+        typeObj,
+        false,
+        params,
+        options,
+    );
+
     await content.save(null, options);
 
     await Actinium.Content.Log.add(

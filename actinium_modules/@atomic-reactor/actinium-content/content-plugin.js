@@ -244,19 +244,19 @@ Actinium.Hook.register(
             return;
 
         switch (fieldConfig.fieldType) {
-        case 'Text':
-            if (typeof field.fieldValue !== 'string') field.fieldValue = '';
-            break;
-        case 'RichText':
-            if (typeof field.fieldValue !== 'object')
-                field.fieldValue = { children: [] };
-            break;
-        case 'List':
-            if (!Array.isArray(field.fieldValue)) field.fieldValue = [];
-            break;
-        case 'Number':
-            if (!_.isNumber(field.fieldValue))
-                field.fieldValue = Number(field.fieldValue);
+            case 'Text':
+                if (typeof field.fieldValue !== 'string') field.fieldValue = '';
+                break;
+            case 'RichText':
+                if (typeof field.fieldValue !== 'object')
+                    field.fieldValue = { children: [] };
+                break;
+            case 'List':
+                if (!Array.isArray(field.fieldValue)) field.fieldValue = [];
+                break;
+            case 'Number':
+                if (!_.isNumber(field.fieldValue))
+                    field.fieldValue = Number(field.fieldValue);
         }
     },
 );
@@ -431,6 +431,23 @@ const relayChangelogLive = client => async ({
 
 Actinium.Hook.register('io.connection', client => {
     client.on('changelog.subscribe', relayChangelogLive(client));
+});
+
+Actinium.Hook.register('content-before-save', (content, type, x, params) => {
+    // Get fields where type is 'Date'
+    const schema = Object.entries(
+        op.get(params, 'schema'),
+    ).map(([field, val]) => ({ field, ...val }));
+
+    const fields = _.pluck(_.where(schema, { type: 'Date' }), 'field');
+
+    fields.forEach(field => {
+        const val = op.get(params, field);
+        if (typeof val === 'string') {
+            params[field] = new Date(val);
+            content.set(field, params[field]);
+        }
+    });
 });
 
 /**
