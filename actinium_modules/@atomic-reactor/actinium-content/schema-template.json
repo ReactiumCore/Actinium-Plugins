@@ -73,6 +73,9 @@
         },
         "Date": {
             "type": "Date"
+        },
+        "Boolean": {
+            "type": "Boolean"
         }
     }
 }
