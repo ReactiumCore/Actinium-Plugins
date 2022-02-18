@@ -37,6 +37,10 @@ const avatarTypes = {
 const afterFind = async req => {
     const { objects = [] } = req;
 
+    if (Actinium.running !== true) {
+        return objects;
+    }
+
     for (let i = 0; i < objects.length; i++) {
         let user = objects[i];
 
@@ -152,9 +156,9 @@ const createAvatar = async req => {
             let url = fileObj.url();
             url = String(url).includes(`${ENV.PARSE_MOUNT}/files/`)
                 ? `${ENV.PARSE_MOUNT}/files/${fileObj
-                    .url()
-                    .split(`${ENV.PARSE_MOUNT}/files/`)
-                    .pop()}`
+                      .url()
+                      .split(`${ENV.PARSE_MOUNT}/files/`)
+                      .pop()}`
                 : url;
 
             req.object.set('avatar', url);
