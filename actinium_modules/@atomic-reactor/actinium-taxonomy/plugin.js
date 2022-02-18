@@ -13,6 +13,8 @@ const Taxonomy = require('./sdk');
 Actinium['Taxonomy'] = op.get(Actinium, 'Taxonomy', Taxonomy);
 
 const registerCaps = async PLUGIN_SCHEMA => {
+    if (!Actinium.Capability) return;
+
     const allowed = ['moderator', 'contributor'];
     PLUGIN_SCHEMA = PLUGIN_SCHEMA || require('./schema');
     PLUGIN_SCHEMA.forEach(({ actions = {}, collection }) =>
@@ -40,10 +42,13 @@ Actinium.Plugin.register(PLUGIN, true);
 const PLUGIN_BLUEPRINTS = require('./blueprints');
 const registerBlueprints = (reg = true) => ({ ID }) => {
     if (ID && ID !== PLUGIN.ID) return;
-    if (reg === true)
+    if (!Actinium.Blueprint) return;
+
+    if (reg === true) {
         PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.register(bp.ID, bp));
-    else if (reg === true)
+    } else if (reg === true) {
         PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.unregister(bp.ID));
+    }
 };
 
 // Start: Blueprints
@@ -57,6 +62,7 @@ Actinium.Hook.register('deactivate', registerBlueprints(false));
 
 const PLUGIN_ROUTES = require('./routes');
 const saveRoutes = async () => {
+    if (!Actinium.Route) return;
     for (const route of PLUGIN_ROUTES) {
         await Actinium.Route.save(route, { useMasterKey: true });
     }
@@ -65,6 +71,7 @@ const saveRoutes = async () => {
 // Update routes on startup
 Actinium.Hook.register('start', async () => {
     if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+    if (!Actinium.Route) return;
     await saveRoutes();
 });
 
@@ -76,6 +83,7 @@ Actinium.Hook.register('before-capability-load', async () => {
 
 // Update routes on plugin activation
 Actinium.Hook.register('activate', async ({ ID }) => {
+    if (!Actinium.Route) return;
     if (ID !== PLUGIN.ID) return;
     await saveRoutes();
 });
@@ -89,6 +97,7 @@ Actinium.Hook.register('activate', ({ ID }) => {
 // Remove routes on deactivation
 Actinium.Hook.register('deactivate', async ({ ID }) => {
     if (ID !== PLUGIN.ID) return;
+    if (!Actinium.Route) return;
     for (const route of PLUGIN_ROUTES) {
         await Actinium.Route.delete(route);
     }
@@ -97,6 +106,7 @@ Actinium.Hook.register('deactivate', async ({ ID }) => {
 // Update routes on plugin update
 Actinium.Hook.register('update', async ({ ID }) => {
     if (ID !== PLUGIN.ID) return;
+    if (!Actinium.Route) return;
     await saveRoutes();
 });
 

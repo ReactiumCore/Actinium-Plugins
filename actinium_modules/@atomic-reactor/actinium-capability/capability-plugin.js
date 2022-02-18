@@ -20,7 +20,7 @@ const PLUGIN = {
     },
     meta: {
         group: 'core',
-        builtIn: true,
+        builtIn: false,
     },
 };
 

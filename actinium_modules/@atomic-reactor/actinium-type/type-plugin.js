@@ -61,6 +61,7 @@ Actinium.Hook.register('type-deleted', async () => Actinium.Cache.del('types'));
 
 const registerBlueprints = (reg = true) => ({ ID }) => {
     if (ID && ID !== PLUGIN.ID) return;
+    if (!Actinium.Blueprint) return;
 
     // prettier-ignore
     if (reg === true) PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.register(bp.ID, bp));
@@ -77,6 +78,8 @@ Actinium.Hook.register('activate', registerBlueprints(true));
 Actinium.Hook.register('deactivate', registerBlueprints(false));
 
 const saveRoutes = async () => {
+    if (!Actinium.Route) return;
+
     for (const route of PLUGIN_ROUTES) {
         await Actinium.Route.save(route);
     }
@@ -105,6 +108,8 @@ Actinium.Hook.register('update', async ({ ID }) => {
 
 // Remove routes on deactivation
 Actinium.Hook.register('deactivate', async ({ ID }) => {
+    if (!Actinium.Route) return;
+
     if (ID === PLUGIN.ID) {
         for (const route of PLUGIN_ROUTES) {
             await Actinium.Route.delete(route);
@@ -112,45 +117,47 @@ Actinium.Hook.register('deactivate', async ({ ID }) => {
     }
 });
 
-Actinium.Capability.register(
-    `${COLLECTION}.create`,
-    {
-        allowed: ['contributor', 'moderator'],
-    },
-    Actinium.Enums.priority.highest,
-);
-Actinium.Capability.register(
-    `${COLLECTION}.retrieve`,
-    {
-        allowed: ['anonymous', 'contributor', 'moderator', 'user'],
-    },
-    Actinium.Enums.priority.highest,
-);
-Actinium.Capability.register(
-    `${COLLECTION}.update`,
-    {
-        allowed: ['moderator', 'contributor'],
-    },
-    Actinium.Enums.priority.highest,
-);
-Actinium.Capability.register(
-    `${COLLECTION}.delete`,
-    {
-        allowed: ['moderator', 'contributor'],
-    },
-    Actinium.Enums.priority.highest,
-);
-Actinium.Capability.register(
-    `${COLLECTION}.addField`,
-    {},
-    Actinium.Enums.priority.highest,
-);
+if (Actinium.Capability) {
+    Actinium.Capability.register(
+        `${COLLECTION}.create`,
+        {
+            allowed: ['contributor', 'moderator'],
+        },
+        Actinium.Enums.priority.highest,
+    );
+    Actinium.Capability.register(
+        `${COLLECTION}.retrieve`,
+        {
+            allowed: ['anonymous', 'contributor', 'moderator', 'user'],
+        },
+        Actinium.Enums.priority.highest,
+    );
+    Actinium.Capability.register(
+        `${COLLECTION}.update`,
+        {
+            allowed: ['moderator', 'contributor'],
+        },
+        Actinium.Enums.priority.highest,
+    );
+    Actinium.Capability.register(
+        `${COLLECTION}.delete`,
+        {
+            allowed: ['moderator', 'contributor'],
+        },
+        Actinium.Enums.priority.highest,
+    );
+    Actinium.Capability.register(
+        `${COLLECTION}.addField`,
+        {},
+        Actinium.Enums.priority.highest,
+    );
 
-Actinium.Capability.register(
-    'type-ui.view',
-    {},
-    Actinium.Enums.priority.highest,
-);
+    Actinium.Capability.register(
+        'type-ui.view',
+        {},
+        Actinium.Enums.priority.highest,
+    );
+}
 
 Actinium.Collection.register(
     COLLECTION,

@@ -12,7 +12,7 @@ const PLUGIN = {
     },
     meta: {
         group: 'core',
-        builtIn: true,
+        builtIn: false,
     },
 };
 
@@ -21,14 +21,16 @@ Actinium.Blueprint = SDK;
 
 Actinium.Plugin.register(PLUGIN, true);
 
-Actinium.Capability.register(
-    'blueprint.retrieve',
-    {
-        allowed: ['anonymous'],
-        excluded: ['banned'],
-    },
-    1000,
-);
+if (Actinium.Capability) {
+    Actinium.Capability.register(
+        'blueprint.retrieve',
+        {
+            allowed: ['anonymous'],
+            excluded: ['banned'],
+        },
+        1000,
+    );
+}
 
 // Add admin-tools zone when blueprint.meta.admin === true blueprints
 Actinium.Hook.register('blueprints', async () => {

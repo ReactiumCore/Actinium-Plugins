@@ -54,9 +54,13 @@ Actinium.Hook.register('schema', async ({ ID }) => {
 const PLUGIN_BLUEPRINTS = require('./blueprints');
 const registerBlueprints = (reg = true) => ({ ID }) => {
     if (ID && ID !== PLUGIN.ID) return;
-    if (reg === true)
+    if (!Actinium.Blueprint) return;
+
+    if (reg === true) {
         PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.register(bp.ID, bp));
-    else PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.unregister(bp.ID));
+    } else {
+        PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.unregister(bp.ID));
+    }
 };
 
 // Start: Blueprints
@@ -89,6 +93,7 @@ Actinium.Hook.register('deactivate', registerBlueprints(false));
 
 const PLUGIN_ROUTES = require('./routes');
 const saveRoutes = async () => {
+    if (!Actinium.Route) return;
     for (const route of PLUGIN_ROUTES) {
         await Actinium.Route.save(route);
     }
@@ -96,6 +101,7 @@ const saveRoutes = async () => {
 
 // Update routes on startup
 Actinium.Hook.register('start', async () => {
+    if (!Actinium.Route) return;
     if (Actinium.Plugin.isActive(PLUGIN.ID)) {
         await saveRoutes();
     }
@@ -103,6 +109,7 @@ Actinium.Hook.register('start', async () => {
 
 // Update routes on plugin activation
 Actinium.Hook.register('activate', async ({ ID }) => {
+    if (!Actinium.Route) return;
     if (ID === PLUGIN.ID) {
         await saveRoutes();
     }
@@ -117,6 +124,7 @@ Actinium.Hook.register('update', async ({ ID }) => {
 
 // Remove routes on deactivation
 Actinium.Hook.register('deactivate', async ({ ID }) => {
+    if (!Actinium.Route) return;
     if (ID === PLUGIN.ID) {
         for (const route of PLUGIN_ROUTES) {
             await Actinium.Route.delete(route);
