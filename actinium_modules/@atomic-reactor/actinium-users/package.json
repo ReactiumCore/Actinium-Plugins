@@ -1,6 +1,12 @@
 {
+    "actinium": {
+        "version": ">=3.7.0"
+    },
+    "reactium": {
+        "version": "3.2.6"
+    },
     "name": "@atomic-reactor/actinium-users",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "description": "Actinium core plugin",
     "main": "index.js",
     "scripts": {
@@ -11,11 +17,5 @@
         "core"
     ],
     "author": "Reactium LLC",
-    "license": "MIT",
-    "reactium": {
-        "version": "3.2.6"
-    },
-    "actinium": {
-        "version": ">=3.7.0"
-    }
+    "license": "MIT"
 }

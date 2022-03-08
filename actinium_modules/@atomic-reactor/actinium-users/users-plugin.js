@@ -257,14 +257,6 @@ Actinium.Cloud.afterDelete(COLLECTION, afterDelete);
 
 Actinium.Cloud.beforeLogin(beforeLogin);
 
-Actinium.Collection.register(COLLECTION, {
-    create: false,
-    retrieve: false,
-    update: false,
-    delete: false,
-    addField: false,
-});
-
 Actinium.Cloud.beforeSave(COLLECTION, beforeSave);
 
 Actinium.Cloud.beforeDelete(COLLECTION, beforeDelete);
@@ -305,6 +297,16 @@ Actinium.Hook.register('schema', async () => {
         PLUGIN_SCHEMA.SCHEMA,
         PLUGIN_SCHEMA.INDEX,
     );
+});
+
+Actinium.Hook.register('collection-clp', async ({ collection, CLP }) => {
+    if (!Actinium.Plugin.isActive(PLUGIN.ID) || collection !== '_User') return;
+
+    // Update CLP
+    Object.keys(CLP).forEach(key => {
+        if (key === 'protectedFields') return;
+        op.set(CLP, [key, 'requiresAuthentication'], true);
+    });
 });
 
 Actinium.Hook.register('start', async () => {

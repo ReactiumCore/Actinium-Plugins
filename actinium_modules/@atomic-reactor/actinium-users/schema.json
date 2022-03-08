@@ -1,10 +1,10 @@
 {
     "ACTIONS": {
         "addField": false,
-        "create": false,
+        "create": true,
         "delete": false,
         "retrieve": true,
-        "update": false
+        "update": true
     },
     "SCHEMA": {
         "fname": {
