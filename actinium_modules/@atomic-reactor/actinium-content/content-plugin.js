@@ -445,10 +445,19 @@ Actinium.Hook.register('io.connection', client => {
 });
 
 Actinium.Hook.register('content-before-save', (content, type, x, params) => {
+    if (!_.isObject(params)) return;
+
+    if (!params.schema || !_.isObject(params.schema)) return;
+
     // Get fields where type is 'Date'
-    const schema = Object.entries(
-        op.get(params, 'schema'),
-    ).map(([field, val]) => ({ field, ...val }));
+
+    let schema = Object.entries(params.schema);
+
+    if (!schema) return;
+
+    schema = schema
+        ? schema.map(([field, val]) => ({ field, ...val }))
+        : schema;
 
     const fields = _.pluck(_.where(schema, { type: 'Date' }), 'field');
 

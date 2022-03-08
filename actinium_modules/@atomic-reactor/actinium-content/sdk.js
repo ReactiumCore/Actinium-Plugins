@@ -1078,6 +1078,17 @@ Content.list = async (params, options) => {
         qry.matches('title', reg);
     }
 
+    /**
+     * @api {Hook} content-query-count content-query-count
+     * @apiDescription Called before a content query count has taken place via Content.list() function.
+     * @apiParam {Object} query Actinium Query object
+     * @apiParam {Object} params The request.params object
+     * @apiParam {Object} options The request options object
+     * @apiName content-query-count
+     * @apiGroup Hooks
+     */
+    await Actinium.Hook.run('content-query-count', qry, params, options);
+
     const count = await qry.count(options);
     if (optimize && count <= 1000) {
         page = 1;
