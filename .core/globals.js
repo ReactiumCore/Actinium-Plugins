@@ -2,7 +2,9 @@ const path = require('path');
 const chalk = require('chalk');
 const moment = require('moment');
 const op = require('object-path');
+const fs = require('fs-extra');
 const Enums = require('./lib/enums');
+const Registry = require('./lib/utils/registry');
 const ACTINIUM_CONFIG = require('./actinium-config');
 
 const stringToBoolean = val => {
@@ -30,6 +32,7 @@ global.ENV = require(`${BASE_DIR}/.core/boot`).environment;
 global.PORT = ENV.PORT;
 global.ACTINIUM_DIR = __dirname;
 global.CLOUD_FUNCTIONS = [];
+global.FEATURES = new Registry('Features');
 
 const defaults = {
     glob: {
@@ -41,7 +44,7 @@ const defaults = {
             `${APP_DIR}/**/*cloud.js`, // since 3.1.8
         ],
         plugins: [
-            `${ACTINIUM_DIR}/plugin/**/*.js`,
+            `${ACTINIUM_DIR}/plugin/**/*plugin.js`,
             `${BASE_DIR}/node_modules/**/actinium/*plugin.js`,
             `${BASE_DIR}/actinium_modules/**/*plugin.js`,
             `${APP_DIR}/**/*plugin.js`,
@@ -112,6 +115,19 @@ ENV.PARSE_PRESERVE_FILENAME = stringToBoolean(
 ENV.PARSE_FILES_DIRECT_ACCESS = stringToBoolean(
     op.get(ENV, 'PARSE_FILES_DIRECT_ACCESS', true),
 );
+
+// TLS MODE
+ENV.APP_TLS_CERT_FILE = op.get(ENV, 'APP_TLS_CERT_FILE');
+ENV.APP_TLS_KEY_FILE = op.get(ENV, 'APP_TLS_KEY_FILE');
+ENV.APP_TLS_KEY =
+    ENV.APP_TLS_KEY_FILE &&
+    fs.existsSync(ENV.APP_TLS_KEY_FILE) &&
+    fs.readFileSync(ENV.APP_TLS_KEY_FILE);
+ENV.APP_TLS_CERT =
+    ENV.APP_TLS_CERT_FILE &&
+    fs.existsSync(ENV.APP_TLS_CERT_FILE) &&
+    fs.readFileSync(ENV.APP_TLS_CERT_FILE);
+ENV.TLS_MODE = ENV.APP_TLS_KEY && ENV.APP_TLS_CERT;
 
 ENV.RUN_TEST = stringToBoolean(op.get(ENV, 'RUN_TEST', true));
 
