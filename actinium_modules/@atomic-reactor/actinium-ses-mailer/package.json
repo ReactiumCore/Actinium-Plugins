@@ -5,8 +5,8 @@
   "reactium": {
     "version": ">=4.0.0"
   },
-  "name": "@atomic-reactor/ses-mailer",
-  "version": "0.0.2",
+  "name": "@atomic-reactor/actinium-ses-mailer",
+  "version": "0.0.3",
   "description": "AWS SES Mailer plugin for Actinium",
   "main": "index.js",
   "scripts": {
