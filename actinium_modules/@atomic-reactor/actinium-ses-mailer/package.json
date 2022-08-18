@@ -1,6 +1,12 @@
 {
+  "actinium": {
+    "version": ">=3.7.21"
+  },
+  "reactium": {
+    "version": ">=4.0.0"
+  },
   "name": "@atomic-reactor/ses-mailer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "AWS SES Mailer plugin for Actinium",
   "main": "index.js",
   "scripts": {
@@ -8,15 +14,10 @@
   },
   "keywords": [],
   "license": "MIT",
-  "reactium": {
-    "version": ">=4.0.0"
-  },
-  "actinium": {
-    "version": ">=3.7.21"
-  },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.150.0",
     "@aws-sdk/client-sts": "^3.150.0",
     "@aws-sdk/credential-provider-node": "^3.150.0"
-  }
+  },
+  "author": "john@dillick.us"
 }
