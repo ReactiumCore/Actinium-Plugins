@@ -33,10 +33,23 @@ const COLLECTION = 'Setting';
  * @apiDescription Create or update a setting object. Capabilities will be enforced.
  * @apiParam {String} key The unique setting key.
  * @apiParam {Mixed} value The setting value.
- * @apiParam {Boolean} [permissions] List of permissions to be applied to the setting.
- * @apiPermission `Setting.create`, `Setting.update` or `setting.${key}-set` capabilities.
+ * @apiParam {Object} [permissions] List of permissions to be applied to the setting. See [CloudACL](#api-Actinium-CloudACL) helper for more information.
+ * @apiPermission `Setting.create`, `Setting.update` or `setting.${key}-set` capabilities. e.g. If you wish to allow a role to modify the `site` setting (or `site.hostname`), you would give that role the `setting.site-set` capability.
  * @apiExample Example Usage:
-Actinium.Cloud.run('setting-set', { key: 'site', value: {title: 'My Site', hostname: 'mysite.com'}, public: true});
+// Create a publicly readable site setting object
+Actinium.Cloud.run('setting-set', { key: 'site', value: {title: 'My Site', hostname: 'mysite.com'}, permissions: [
+        {
+            permission: 'read',
+            type: 'public',
+            allow: true,
+        },
+        {
+            permission: 'write',
+            type: 'public',
+            allow: false,
+        },
+
+]});
  */
 const set = async req => {
     const { params = {} } = req;
@@ -429,7 +442,7 @@ Actinium.Cloud.run('settings');
   * @apiName setting-get
   * @apiDescription Retrieves a specifc setting object. Capabilities will be enforced.
   * @apiParam {String} key The unique setting key.
-  * @apiPermission `Setting.retrieve` or `setting.${key}-get` capabilities.
+  * @apiPermission `Setting.retrieve` or `setting.${key}-get` capabilities. e.g. If your top-level key is site, the `setting.site-get` capability with grant a role the ability to read this setting. Note that sub-keys, such as `site.hostname` will use the top-level `setting.site-get` capability.
   * @apiExample Example Usage:
  Actinium.Cloud.run('setting-get', { key: 'site'});
   */
