@@ -41,18 +41,17 @@ const afterFind = async req => {
         return objects;
     }
 
-    for (let i = 0; i < objects.length; i++) {
-        let user = objects[i];
-
-        const roles = Actinium.Roles.User.get(user.id);
-        const capabilities = Actinium.Capability.User.get(user.id);
-
-        await Actinium.Hook.run('user-fetch', user);
-
+    const rolesByUserId = Actinium.Roles.User.getMany(objects);
+    const capsByUserId = Actinium.Capability.User.getMany(objects, rolesByUserId);
+    for (const user of objects) {
+        const roles = rolesByUserId[user.id];
+        const capabilities = capsByUserId[user.id];
         user.set('roles', roles);
         user.set('capabilities', capabilities);
-        objects[i] = user;
+        await Actinium.Hook.run('user-fetch', user);
     }
+
+    await Actinium.Hook.run('users-after-find', objects, rolesByUserId, capsByUserId);
 
     return Promise.resolve(objects);
 };
