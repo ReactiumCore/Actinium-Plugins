@@ -1,7 +1,65 @@
-const op = require('object-path');
-const _ = require('underscore');
+import op from 'object-path';
 
-const Search = {};
+const MOD = () => {
+    const Search = {};
+
+    Search.index = async (params) => {
+        const indexConfig = { shouldIndex: true, prefetchItems: true };
+        await Actinium.Hook.run('search-index-config', indexConfig, params);
+
+        if (op.get(indexConfig, 'shouldIndex', true)) {
+            const options = Actinium.Utils.MasterOptions();
+            const type = await Actinium.Type.retrieve(params.type, options);
+            const { collection } = type;
+            const { permittedFields } = await Actinium.Content.getSchema(type);
+
+            let items = [];
+            if (op.get(indexConfig, 'prefetchItems', true)) {
+                const qry = new Parse.Query(collection);
+                let results = await qry.find(options);
+
+                while (results.length > 0) {
+                    for (let item of results) {
+                        item = Actinium.Utils.serialize(item);
+                        await Actinium.Hook.run(
+                            'search-index-item-normalize',
+                            item,
+                            params,
+                            type,
+                            permittedFields,
+                            indexConfig,
+                        );
+                        items.push(item);
+                    }
+
+                    qry.skip(items.length);
+                    results = await qry.find(options);
+                }
+            }
+
+            return Actinium.Hook.run(
+                'search-index',
+                items,
+                params,
+                type,
+                permittedFields,
+                indexConfig,
+            );
+        }
+    };
+    Search.search = async (req) => {
+        const { threshold = 0 } = req.params;
+        const context = await Actinium.Hook.run('search', req);
+        let { results = [] } = op.get(context, 'results');
+        results = results.filter(({ score }) => score >= threshold);
+        op.set(context, 'results.results', results);
+        return op.get(context, 'results');
+    };
+
+    return Search;
+};
+
+export default MOD();
 
 /**
  * @api {Asynchronous} Search.index(params) Search.index()
@@ -56,53 +114,6 @@ const Search = {};
  * @apiName search-index
  * @apiGroup Hooks
  */
-Search.index = async params => {
-    const indexConfig = { shouldIndex: true, prefetchItems: true };
-    await Actinium.Hook.run('search-index-config', indexConfig, params);
-
-    if (op.get(indexConfig, 'shouldIndex', true)) {
-        const options = Actinium.Utils.MasterOptions();
-        const type = await Actinium.Type.retrieve(params.type, options);
-        const { collection } = type;
-        const {
-            existingSchema,
-            permittedFields,
-        } = await Actinium.Content.getSchema(type);
-
-        let items = [];
-        if (op.get(indexConfig, 'prefetchItems', true)) {
-            const qry = new Parse.Query(collection);
-            let results = await qry.find(options);
-
-            while (results.length > 0) {
-                for (let item of results) {
-                    item = Actinium.Utils.serialize(item);
-                    await Actinium.Hook.run(
-                        'search-index-item-normalize',
-                        item,
-                        params,
-                        type,
-                        permittedFields,
-                        indexConfig,
-                    );
-                    items.push(item);
-                }
-
-                qry.skip(items.length);
-                results = await qry.find(options);
-            }
-        }
-
-        return Actinium.Hook.run(
-            'search-index',
-            items,
-            params,
-            type,
-            permittedFields,
-            indexConfig,
-        );
-    }
-};
 
 /**
  * @api {Asynchronous} Search.search(request) Search.search()
@@ -115,13 +126,3 @@ Search.index = async params => {
  * @apiParam (params) {Number} [limit=1000] Limit page results
  * @apiParam (params) {Float} [threshold=0] Minimum score value. Used to shake out lower ranking search results.
  */
-Search.search = async req => {
-    const { threshold = 0 } = req.params;
-    const context = await Actinium.Hook.run('search', req);
-    let { results = [] } = op.get(context, 'results');
-    results = results.filter(({ score }) => score >= threshold);
-    op.set(context, 'results.results', results);
-    return op.get(context, 'results');
-};
-
-module.exports = Search;

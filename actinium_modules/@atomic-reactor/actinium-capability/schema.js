@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     collection: 'Capability',
     actions: {
         create: false,

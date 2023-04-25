@@ -1,132 +1,143 @@
-const _ = require('underscore');
-const op = require('object-path');
-const pkg = require('./package');
+import _ from 'underscore';
+import fs from 'node:fs';
+import op from 'object-path';
 
-const PLUGIN = {
-    ID: 'Content',
-    name: 'Content Plugin',
-    description: 'Plugin used to manage content.',
-    version: {
-        actinium: op.get(pkg, 'actinium.version', '>=3.2.6'),
-        plugin: op.get(pkg, 'version'),
-    },
-    meta: {
-        group: 'core',
-        builtIn: true,
-    },
-};
+const pkg = JSON.parse(fs.readFileSync('package.json'));
 
-const PLUGIN_SDK = require('./sdk');
-const ENUMS = require('./enums');
-
-// Create SDK Singleton
-Actinium.Content = PLUGIN_SDK;
-
-// Register Plugin
-Actinium.Plugin.register(PLUGIN, true);
-
-const PLUGIN_BLUEPRINTS = require('./blueprints');
-const registerBlueprints = (reg = true) => ({ ID }) => {
-    if (ID && ID !== PLUGIN.ID) return;
-    if (!Actinium.Blueprint) return;
-
-    if (reg === true) {
-        PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.register(bp.ID, bp));
-    } else {
-        PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.unregister(bp.ID));
-    }
-};
-Actinium.Capability.register(
-    'content-ui.view',
-    {
-        allowed: ['contributor', 'moderator'],
-    },
-    Actinium.Enums.priority.highest,
-);
-
-// Start: Blueprints
-Actinium.Hook.register('start', registerBlueprints(true));
-
-// Activate: Blueprints
-Actinium.Hook.register('activate', registerBlueprints(true));
-
-// Deactivate: Blueprints
-Actinium.Hook.register('deactivate', registerBlueprints(false));
-
-const PLUGIN_ROUTES = require('./routes');
-const saveRoutes = async () => {
-    if (!Actinium.Route) return;
-    for (const route of PLUGIN_ROUTES) {
-        await Actinium.Route.save(route);
-    }
-};
-
-// Update routes on startup
-Actinium.Hook.register('start', async () => {
-    if (!Actinium.Route) return;
-    if (Actinium.Plugin.isActive(PLUGIN.ID)) {
-        await saveRoutes();
-    }
-});
-
-// Update routes on plugin activation
-Actinium.Hook.register('activate', async ({ ID }) => {
-    if (!Actinium.Route) return;
-    if (ID === PLUGIN.ID) {
-        await saveRoutes();
-    }
-});
-
-// Update routes on plugin update
-Actinium.Hook.register('update', async ({ ID }) => {
-    if (!Actinium.Route) return;
-    if (ID === PLUGIN.ID) {
-        await saveRoutes();
-    }
-});
-
-// Remove routes on deactivation
-Actinium.Hook.register('deactivate', async ({ ID }) => {
-    if (!Actinium.Route) return;
-    if (ID === PLUGIN.ID) {
-        for (const route of PLUGIN_ROUTES) {
-            await Actinium.Route.delete(route);
-        }
-    }
-});
-
-Actinium.Hook.register('running', async () => {
-    if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
-    if (!Actinium.Setting) return;
-
-    const schedule = await Actinium.Setting.get(
-        ENUMS.CRON_SETTING,
-        '*/30 * * * *',
-    );
-
-    Actinium.Pulse.define(
-        'scheduled-publish',
-        {
-            schedule,
+const MOD = async () => {
+    const PLUGIN = {
+        ID: 'Content',
+        name: 'Content Plugin',
+        description: 'Plugin used to manage content.',
+        version: {
+            actinium: op.get(pkg, 'actinium.version', '>5.0.0'),
+            plugin: op.get(pkg, 'version'),
         },
-        Actinium.Content.publishScheduled,
-    );
-    await Actinium.Content.publishScheduled();
-
-    Actinium.Pulse.define(
-        'type-maintenance',
-        {
-            schedule,
+        meta: {
+            group: 'core',
+            builtIn: true,
         },
-        Actinium.Content.typeMaintenance,
-    );
-    await Actinium.Content.typeMaintenance();
-});
+    };
 
-Actinium.Hook.register('start', async () => {
-    if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+    try {
+        const { default: PLUGIN_SDK } = await import('./sdk.js');
 
-    /**
+        const { default: ENUMS } = await import('./enums.js');
+
+        // Register Plugin
+        Actinium.Plugin.register(PLUGIN, true);
+
+        // Create SDK Singleton
+        // Actinium.Content = PLUGIN_SDK;
+
+        const { default: PLUGIN_BLUEPRINTS } = await import('./blueprints.js');
+        const registerBlueprints =
+            (reg = true) =>
+            ({ ID }) => {
+                if (ID && ID !== PLUGIN.ID) return;
+                if (!Actinium.Blueprint) return;
+
+                if (reg === true) {
+                    PLUGIN_BLUEPRINTS.forEach((bp) =>
+                        Actinium.Blueprint.register(bp.ID, bp),
+                    );
+                } else {
+                    PLUGIN_BLUEPRINTS.forEach((bp) =>
+                        Actinium.Blueprint.unregister(bp.ID),
+                    );
+                }
+            };
+        Actinium.Capability.register(
+            'content-ui.view',
+            {
+                allowed: ['contributor', 'moderator'],
+            },
+            Actinium.Enums.priority.highest,
+        );
+
+        // Start: Blueprints
+        Actinium.Hook.register('start', registerBlueprints(true));
+
+        // Activate: Blueprints
+        Actinium.Hook.register('activate', registerBlueprints(true));
+
+        // Deactivate: Blueprints
+        Actinium.Hook.register('deactivate', registerBlueprints(false));
+
+        const { default: PLUGIN_ROUTES } = await import('./routes.js');
+        const saveRoutes = async () => {
+            if (!Actinium.Route) return;
+            for (const route of PLUGIN_ROUTES) {
+                await Actinium.Route.save(route);
+            }
+        };
+
+        // Update routes on startup
+        Actinium.Hook.register('start', async () => {
+            if (!Actinium.Route) return;
+            if (Actinium.Plugin.isActive(PLUGIN.ID)) {
+                await saveRoutes();
+            }
+        });
+
+        // Update routes on plugin activation
+        Actinium.Hook.register('activate', async ({ ID }) => {
+            if (!Actinium.Route) return;
+            if (ID === PLUGIN.ID) {
+                await saveRoutes();
+            }
+        });
+
+        // Update routes on plugin update
+        Actinium.Hook.register('update', async ({ ID }) => {
+            if (!Actinium.Route) return;
+            if (ID === PLUGIN.ID) {
+                await saveRoutes();
+            }
+        });
+
+        // Remove routes on deactivation
+        Actinium.Hook.register('deactivate', async ({ ID }) => {
+            if (!Actinium.Route) return;
+            if (ID === PLUGIN.ID) {
+                for (const route of PLUGIN_ROUTES) {
+                    await Actinium.Route.delete(route);
+                }
+            }
+        });
+
+        Actinium.Hook.register('running', async () => {
+            if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+            if (!Actinium.Setting) return;
+
+            const schedule = await Actinium.Setting.get(
+                ENUMS.CRON_SETTING,
+                '*/30 * * * *',
+            );
+
+            Actinium.Pulse.define(
+                'scheduled-publish',
+                {
+                    schedule,
+                },
+                Actinium.Content.publishScheduled,
+            );
+            await Actinium.Content.publishScheduled();
+
+            Actinium.Pulse.define(
+                'type-maintenance',
+                {
+                    schedule,
+                },
+                Actinium.Content.typeMaintenance,
+            );
+            await Actinium.Content.typeMaintenance();
+        });
+
+        Actinium.Hook.register('start', async () => {
+            if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+
+            /**
      * @api {Hook} content-default-statuses content-default-statuses
      * @apiDescription Hook during `start` if content plugin is active.
      You can use this to add additional default content statuses (e.g. DRAFT, PUBLISHED)
@@ -134,9 +145,9 @@ Actinium.Hook.register('start', async () => {
      * @apiName content-default-statuses
      * @apiGroup Hooks
      */
-    await Actinium.Hook.run('content-default-statuses', ENUMS.STATUS);
+            await Actinium.Hook.run('content-default-statuses', ENUMS.STATUS);
 
-    /**
+            /**
      * @api {Hook} content-default-change-types content-default-change-types
      * @apiDescription Hook during `start` if content plugin is active.
      You can use this to add additional change log reasons.
@@ -144,333 +155,361 @@ Actinium.Hook.register('start', async () => {
      * @apiName content-default-change-types
      * @apiGroup Hooks
      */
-    await Actinium.Hook.run('content-default-change-types', ENUMS.CHANGES);
-});
-
-Actinium.Hook.register('setting-set', async key => {
-    const schedule = await Actinium.Setting.get(
-        ENUMS.CRON_SETTING,
-        '*/30 * * * *',
-    );
-
-    if (key === ENUMS.CRON_SETTING) {
-        Actinium.Pulse.replace(
-            'scheduled-publish',
-            {
-                schedule,
-            },
-            Actinium.Content.publishScheduled,
-        );
-    }
-});
-
-Actinium.Hook.register(
-    'content-before-clone',
-    async (targetObj, sourceObj) => {
-        // pick default cloned slug
-        const originalSlug = op.get(sourceObj, 'slug');
-
-        // look for previous clones
-        const slugs = op
-            .get(sourceObj, 'type.slugs', [])
-            .filter(
-                slug => slug.startsWith(originalSlug) && slug !== originalSlug,
-            )
-            .sort();
-
-        let newSlug = originalSlug + '-1';
-        if (slugs.length > 0) {
-            const previous = slugs[slugs.length - 1].match(/-(\d+)$/);
-            if (previous) {
-                newSlug =
-                    originalSlug +
-                    '-' +
-                    (parseInt(op.get(previous, '1', 0)) + 1);
-            }
-        }
-
-        op.set(targetObj, 'slug', newSlug);
-        op.set(targetObj, 'title', op.get(sourceObj, 'title') + ' Copy');
-    },
-    Actinium.Enums.priority.highest,
-);
-
-Actinium.Hook.register(
-    'schema',
-    async ({ ID }) => {
-        // ignore plugin installs
-        if (ID) return;
-
-        Actinium.Capability.register('set-content-status', {
-            allowed: ['contributor', 'moderator'],
-        });
-        Actinium.Capability.register('publish-content', {
-            allowed: ['contributor', 'moderator'],
-        });
-        Actinium.Capability.register('unpublish-content', {
-            allowed: ['contributor', 'moderator'],
+            await Actinium.Hook.run(
+                'content-default-change-types',
+                ENUMS.CHANGES,
+            );
         });
 
-        const { types = [] } = await Actinium.Type.list(
-            {},
-            Actinium.Utils.MasterOptions(),
-        );
+        Actinium.Hook.register('setting-set', async (key) => {
+            const schedule = await Actinium.Setting.get(
+                ENUMS.CRON_SETTING,
+                '*/30 * * * *',
+            );
 
-        for (const type of types) {
-            try {
-                await Actinium.Type.saveSchema(type);
-            } catch (error) {
-                ERROR(`Error updating content schema ${type.type}`, error);
+            if (key === ENUMS.CRON_SETTING) {
+                Actinium.Pulse.replace(
+                    'scheduled-publish',
+                    {
+                        schedule,
+                    },
+                    Actinium.Content.publishScheduled,
+                );
             }
-        }
-    },
-    Actinium.Enums.priority.lowest,
-);
+        });
 
-Actinium.Hook.register('type-saved', async contentType => {
-    const { type } = contentType;
-    try {
-        await Actinium.Content.saveSchema(contentType);
-    } catch (error) {
-        ERROR(`Error updating content schema ${type}`, error);
-    }
-});
+        Actinium.Hook.register(
+            'content-before-clone',
+            async (targetObj, sourceObj) => {
+                // pick default cloned slug
+                const originalSlug = op.get(sourceObj, 'slug');
 
-const clearListCache = (contentObj, typeObj) => {
-    const collection = op.get(typeObj, 'collection');
-    Actinium.Cache.del(`content-${collection}`);
-};
+                // look for previous clones
+                const slugs = op
+                    .get(sourceObj, 'type.slugs', [])
+                    .filter(
+                        (slug) =>
+                            slug.startsWith(originalSlug) &&
+                            slug !== originalSlug,
+                    )
+                    .sort();
 
-Actinium.Hook.register('content-published', clearListCache);
-Actinium.Hook.register('content-status-changed', clearListCache);
-
-Actinium.Hook.register(
-    'content-field-sanitize',
-    async ({ field, fieldConfig }) => {
-        if (
-            typeof field.fieldValue === 'undefined' ||
-            field.fieldValue === null
-        ) {
-            return;
-        }
-
-        switch (fieldConfig.fieldType) {
-            case 'Text':
-                if (typeof field.fieldValue !== 'string') field.fieldValue = '';
-                break;
-            case 'RichText':
-                if (typeof field.fieldValue !== 'object')
-                    field.fieldValue = { children: [] };
-                break;
-            case 'List':
-                if (!Array.isArray(field.fieldValue)) field.fieldValue = [];
-                break;
-            case 'Number':
-                if (!_.isNumber(field.fieldValue))
-                    field.fieldValue = Number(field.fieldValue);
-        }
-    },
-);
-
-/**
- * Default sanitization for Pointers and Relations
- */
-Actinium.Hook.register(
-    'content-field-sanitize',
-    async ({ field, fieldData, fieldSchema, object }) => {
-        // handle missing field schema
-        if (!fieldSchema) op.del(fieldData, [field.fieldSlug]);
-        const type = op.get(fieldSchema, 'type');
-        const targetClass = op.get(fieldSchema, 'targetClass');
-
-        const valueToParseObj = targetClass => value => {
-            if (typeof value === 'object') {
-                if (
-                    (value instanceof Actinium.Object ||
-                        value instanceof Parse.Object) &&
-                    value.className === targetClass
-                )
-                    return value;
-                else if (value.objectId) {
-                    const obj = new Actinium.Object(targetClass);
-                    obj.id = value.objectId;
-
-                    return {
-                        delete: op.get(value, 'delete', false) === true,
-                        obj,
-                    };
-                }
-            }
-            return false;
-        };
-
-        if (type === 'Relation') {
-            const relation = object.relation(field.fieldSlug);
-            _.compact(
-                _.chain([field.fieldValue])
-                    .flatten()
-                    .compact()
-                    .value()
-                    .map(valueToParseObj(targetClass)),
-            ).forEach(target => {
-                if (target !== false) {
-                    const { delete: deleteIt, obj } = target;
-                    if (deleteIt === true) {
-                        relation.remove(obj);
-                    } else {
-                        relation.add(obj);
+                let newSlug = originalSlug + '-1';
+                if (slugs.length > 0) {
+                    const previous = slugs[slugs.length - 1].match(/-(\d+)$/);
+                    if (previous) {
+                        newSlug =
+                            originalSlug +
+                            '-' +
+                            (parseInt(op.get(previous, '1', 0)) + 1);
                     }
                 }
-            });
-            op.del(fieldData, [field.fieldSlug]);
-        } else if (type === 'Pointer') {
-            const target = valueToParseObj(targetClass)(field.fieldValue);
-            const { obj } = target;
-            if (target !== false) object.set(field.fieldSlug, obj);
-            op.del(fieldData, [field.fieldSlug]);
-        }
-    },
-    Actinium.Enums.priority.lowest,
-);
 
-Actinium.Hook.register(
-    'content-master-copy-fields',
-    async (masterCopyFields, schema) => {
-        for (const [prop, config] of Object.entries(schema)) {
-            if (['Pointer', 'Relation'].includes(config.type))
-                op.set(masterCopyFields, prop, true);
-        }
-    },
-);
+                op.set(targetObj, 'slug', newSlug);
+                op.set(
+                    targetObj,
+                    'title',
+                    op.get(sourceObj, 'title') + ' Copy',
+                );
+            },
+            Actinium.Enums.priority.highest,
+        );
 
-// user content query
-Actinium.Hook.register('content-query', async (qry, params) => {
-    if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+        Actinium.Hook.register(
+            'schema',
+            async ({ ID }) => {
+                // ignore plugin installs
+                if (ID) return;
 
-    if (op.get(params, 'user')) {
-        let user = params.user;
-        if (_.isString(user)) {
-            user = new Actinium.Object(Parse.User).set('objectId', user);
-        }
+                Actinium.Capability.register('set-content-status', {
+                    allowed: ['contributor', 'moderator'],
+                });
+                Actinium.Capability.register('publish-content', {
+                    allowed: ['contributor', 'moderator'],
+                });
+                Actinium.Capability.register('unpublish-content', {
+                    allowed: ['contributor', 'moderator'],
+                });
 
-        qry.equalTo('user', user);
-    }
-});
+                const { types = [] } = await Actinium.Type.list(
+                    {},
+                    Actinium.Utils.MasterOptions(),
+                );
 
-Actinium.Hook.register(
-    'user-retrieve-response',
-    async (user, params, options) => {
-        const { verbose } = params;
-        if (!Actinium.Plugin.isActive(PLUGIN.ID) || !verbose) return;
+                for (const type of types) {
+                    try {
+                        await Actinium.Type.saveSchema(type);
+                    } catch (error) {
+                        ERROR(
+                            `Error updating content schema ${type.type}`,
+                            error,
+                        );
+                    }
+                }
+            },
+            Actinium.Enums.priority.lowest,
+        );
 
-        options = options || { useMasterKey: true };
-        const content = await Actinium.Content.User.list({ user }, options);
-
-        if (_.isError(content)) return;
-
-        const meta = user.get('meta') || {};
-        op.set(meta, 'content', content);
-        user.set('meta', meta);
-    },
-);
-
-// Used for User activity log
-Actinium.Content.registerActivity('content-saved');
-Actinium.Content.registerActivity('content-slug-changed');
-Actinium.Content.registerActivity('content-trashed');
-Actinium.Content.registerActivity('content-published');
-Actinium.Content.registerActivity('content-status-changed');
-Actinium.Content.registerActivity('content-unpublished');
-Actinium.Content.registerActivity('content-restored');
-
-const relayChangelogLive = client => async ({
-    contentId,
-    advancedQuery,
-    sessionToken,
-}) => {
-    DEBUG('changelog.subscribe', contentId);
-
-    const qry = new Actinium.Query('Changelog');
-    if (contentId) qry.equalTo('contentId', contentId);
-
-    // allow special queries
-    if (advancedQuery.length) {
-        advancedQuery.forEach(({ operator, params }) => {
-            if (operator in qry) {
-                qry[operator](...params);
+        Actinium.Hook.register('type-saved', async (contentType) => {
+            const { type } = contentType;
+            try {
+                await Actinium.Content.saveSchema(contentType);
+            } catch (error) {
+                ERROR(`Error updating content schema ${type}`, error);
             }
         });
-    }
-    try {
-        const subscription = await qry.subscribe(null, { sessionToken });
 
-        subscription.on('create', logEntry => {
-            const logObj = Actinium.Utils.serialize(logEntry);
-            client.emit('changelog-created', logObj);
+        const clearListCache = (contentObj, typeObj) => {
+            const collection = op.get(typeObj, 'collection');
+            Actinium.Cache.del(`content-${collection}`);
+        };
+
+        Actinium.Hook.register('content-published', clearListCache);
+        Actinium.Hook.register('content-status-changed', clearListCache);
+
+        Actinium.Hook.register(
+            'content-field-sanitize',
+            async ({ field, fieldConfig }) => {
+                if (
+                    typeof field.fieldValue === 'undefined' ||
+                    field.fieldValue === null
+                ) {
+                    return;
+                }
+
+                switch (fieldConfig.fieldType) {
+                    case 'Text':
+                        if (typeof field.fieldValue !== 'string')
+                            field.fieldValue = '';
+                        break;
+                    case 'RichText':
+                        if (typeof field.fieldValue !== 'object')
+                            field.fieldValue = { children: [] };
+                        break;
+                    case 'List':
+                        if (!Array.isArray(field.fieldValue))
+                            field.fieldValue = [];
+                        break;
+                    case 'Number':
+                        if (!_.isNumber(field.fieldValue))
+                            field.fieldValue = Number(field.fieldValue);
+                }
+            },
+        );
+
+        /**
+         * Default sanitization for Pointers and Relations
+         */
+        Actinium.Hook.register(
+            'content-field-sanitize',
+            async ({ field, fieldData, fieldSchema, object }) => {
+                // handle missing field schema
+                if (!fieldSchema) op.del(fieldData, [field.fieldSlug]);
+                const type = op.get(fieldSchema, 'type');
+                const targetClass = op.get(fieldSchema, 'targetClass');
+
+                const valueToParseObj = (targetClass) => (value) => {
+                    if (typeof value === 'object') {
+                        if (
+                            (value instanceof Actinium.Object ||
+                                value instanceof Parse.Object) &&
+                            value.className === targetClass
+                        )
+                            return value;
+                        else if (value.objectId) {
+                            const obj = new Actinium.Object(targetClass);
+                            obj.id = value.objectId;
+
+                            return {
+                                delete: op.get(value, 'delete', false) === true,
+                                obj,
+                            };
+                        }
+                    }
+                    return false;
+                };
+
+                if (type === 'Relation') {
+                    const relation = object.relation(field.fieldSlug);
+                    _.compact(
+                        _.chain([field.fieldValue])
+                            .flatten()
+                            .compact()
+                            .value()
+                            .map(valueToParseObj(targetClass)),
+                    ).forEach((target) => {
+                        if (target !== false) {
+                            const { delete: deleteIt, obj } = target;
+                            if (deleteIt === true) {
+                                relation.remove(obj);
+                            } else {
+                                relation.add(obj);
+                            }
+                        }
+                    });
+                    op.del(fieldData, [field.fieldSlug]);
+                } else if (type === 'Pointer') {
+                    const target = valueToParseObj(targetClass)(
+                        field.fieldValue,
+                    );
+                    const { obj } = target;
+                    if (target !== false) object.set(field.fieldSlug, obj);
+                    op.del(fieldData, [field.fieldSlug]);
+                }
+            },
+            Actinium.Enums.priority.lowest,
+        );
+
+        Actinium.Hook.register(
+            'content-master-copy-fields',
+            async (masterCopyFields, schema) => {
+                for (const [prop, config] of Object.entries(schema)) {
+                    if (['Pointer', 'Relation'].includes(config.type))
+                        op.set(masterCopyFields, prop, true);
+                }
+            },
+        );
+
+        // user content query
+        Actinium.Hook.register('content-query', async (qry, params) => {
+            if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+
+            if (op.get(params, 'user')) {
+                let user = params.user;
+                if (_.isString(user)) {
+                    user = new Actinium.Object(Parse.User).set(
+                        'objectId',
+                        user,
+                    );
+                }
+
+                qry.equalTo('user', user);
+            }
         });
 
-        subscription.on('update', logEntry => {
-            const logObj = Actinium.Utils.serialize(logEntry);
-            client.emit('changelog-updated', logObj);
+        Actinium.Hook.register(
+            'user-retrieve-response',
+            async (user, params, options) => {
+                const { verbose } = params;
+                if (!Actinium.Plugin.isActive(PLUGIN.ID) || !verbose) return;
+
+                options = options || { useMasterKey: true };
+                const content = await Actinium.Content.User.list(
+                    { user },
+                    options,
+                );
+
+                if (_.isError(content)) return;
+
+                const meta = user.get('meta') || {};
+                op.set(meta, 'content', content);
+                user.set('meta', meta);
+            },
+        );
+
+        // Used for User activity log
+        Actinium.Content.registerActivity('content-saved');
+        Actinium.Content.registerActivity('content-slug-changed');
+        Actinium.Content.registerActivity('content-trashed');
+        Actinium.Content.registerActivity('content-published');
+        Actinium.Content.registerActivity('content-status-changed');
+        Actinium.Content.registerActivity('content-unpublished');
+        Actinium.Content.registerActivity('content-restored');
+
+        const relayChangelogLive =
+            (client) =>
+            async ({ contentId, advancedQuery, sessionToken }) => {
+                DEBUG('changelog.subscribe', contentId);
+
+                const qry = new Actinium.Query('Changelog');
+                if (contentId) qry.equalTo('contentId', contentId);
+
+                // allow special queries
+                if (advancedQuery.length) {
+                    advancedQuery.forEach(({ operator, params }) => {
+                        if (operator in qry) {
+                            qry[operator](...params);
+                        }
+                    });
+                }
+                try {
+                    const subscription = await qry.subscribe(null, {
+                        sessionToken,
+                    });
+
+                    subscription.on('create', (logEntry) => {
+                        const logObj = Actinium.Utils.serialize(logEntry);
+                        client.emit('changelog-created', logObj);
+                    });
+
+                    subscription.on('update', (logEntry) => {
+                        const logObj = Actinium.Utils.serialize(logEntry);
+                        client.emit('changelog-updated', logObj);
+                    });
+
+                    subscription.on('enter', (logEntry) => {
+                        const logObj = Actinium.Utils.serialize(logEntry);
+                        client.emit('changelog-entered', logObj);
+                    });
+
+                    subscription.on('leave', (logEntry) => {
+                        const logObj = Actinium.Utils.serialize(logEntry);
+                        client.emit('changelog-left', logObj);
+                    });
+
+                    subscription.on('delete', (logEntry) => {
+                        const logObj = Actinium.Utils.serialize(logEntry);
+                        client.emit('changelog-deleted', logObj);
+                    });
+
+                    const unsubscribe = () => subscription.unsubscribe();
+                    client.on('disconnecting', unsubscribe);
+                    client.on('changelog.unsubscribe', (message) => {
+                        DEBUG('changelog.unsubscribe', message.contentId);
+                        if (message.contentId === contentId) unsubscribe();
+                    });
+                } catch (error) {
+                    ERROR(error);
+                }
+            };
+
+        Actinium.Hook.register('io.connection', (client) => {
+            client.on('changelog.subscribe', relayChangelogLive(client));
         });
 
-        subscription.on('enter', logEntry => {
-            const logObj = Actinium.Utils.serialize(logEntry);
-            client.emit('changelog-entered', logObj);
-        });
+        Actinium.Hook.register(
+            'content-before-save',
+            (content, type, x, params) => {
+                if (!_.isObject(params)) return;
 
-        subscription.on('leave', logEntry => {
-            const logObj = Actinium.Utils.serialize(logEntry);
-            client.emit('changelog-left', logObj);
-        });
+                if (!params.schema || !_.isObject(params.schema)) return;
 
-        subscription.on('delete', logEntry => {
-            const logObj = Actinium.Utils.serialize(logEntry);
-            client.emit('changelog-deleted', logObj);
-        });
+                // Get fields where type is 'Date'
 
-        const unsubscribe = () => subscription.unsubscribe();
-        client.on('disconnecting', unsubscribe);
-        client.on('changelog.unsubscribe', message => {
-            DEBUG('changelog.unsubscribe', message.contentId);
-            if (message.contentId === contentId) unsubscribe();
-        });
-    } catch (error) {
-        ERROR(error);
-    }
-};
+                let schema = Object.entries(params.schema);
 
-Actinium.Hook.register('io.connection', client => {
-    client.on('changelog.subscribe', relayChangelogLive(client));
-});
+                if (!schema) return;
 
-Actinium.Hook.register('content-before-save', (content, type, x, params) => {
-    if (!_.isObject(params)) return;
+                schema = schema
+                    ? schema.map(([field, val]) => ({ field, ...val }))
+                    : schema;
 
-    if (!params.schema || !_.isObject(params.schema)) return;
+                const fields = _.pluck(
+                    _.where(schema, { type: 'Date' }),
+                    'field',
+                );
 
-    // Get fields where type is 'Date'
+                fields.forEach((field) => {
+                    const val = op.get(params, field);
+                    if (typeof val === 'string') {
+                        params[field] = new Date(val);
+                        content.set(field, params[field]);
+                    }
+                });
+            },
+        );
 
-    let schema = Object.entries(params.schema);
-
-    if (!schema) return;
-
-    schema = schema
-        ? schema.map(([field, val]) => ({ field, ...val }))
-        : schema;
-
-    const fields = _.pluck(_.where(schema, { type: 'Date' }), 'field');
-
-    fields.forEach(field => {
-        const val = op.get(params, field);
-        if (typeof val === 'string') {
-            params[field] = new Date(val);
-            content.set(field, params[field]);
-        }
-    });
-});
-
-/**
+        /**
  * @api {Asynchronous} content-create content-create
  * @apiDescription Create new content of a defined Type. In addition to the required parameters of
  `type` and `slug`, you can provide any parameter's that conform to the runtime fields saved for that type.
@@ -487,37 +526,37 @@ Actinium.Hook.register('content-before-save', (content, type, x, params) => {
  * @apiName content-create
  * @apiGroup Cloud
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-create', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
+        Actinium.Cloud.define(PLUGIN.ID, 'content-create', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    return Actinium.Content.create(
-        req.params,
-        Actinium.Utils.CloudCapOptions(req, [`${collection}.create`]),
-    );
-});
+            return Actinium.Content.create(
+                req.params,
+                Actinium.Utils.CloudCapOptions(req, [`${collection}.create`]),
+            );
+        });
 
-Actinium.Cloud.define(PLUGIN.ID, 'content-clone', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
+        Actinium.Cloud.define(PLUGIN.ID, 'content-clone', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    return Actinium.Content.clone(
-        req.params,
-        Actinium.Utils.CloudCapOptions(req, [`${collection}.create`]),
-    );
-});
+            return Actinium.Content.clone(
+                req.params,
+                Actinium.Utils.CloudCapOptions(req, [`${collection}.create`]),
+            );
+        });
 
-/**
+        /**
  * @api {Asynchronous} content-list content-list
  * @apiDescription Get list of content of a specific Type.
  * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
@@ -548,20 +587,20 @@ Actinium.Cloud.run('content-list', {
     "status": "DRAFT"
 });
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-list', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.retrieveany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        Actinium.Cloud.define(PLUGIN.ID, 'content-list', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+            const options = Actinium.Utils.CloudHasCapabilities(req, [
+                `${collection}.retrieveany`,
+            ])
+                ? Actinium.Utils.CloudMasterOptions(req)
+                : Actinium.Utils.CloudRunOptions(req);
 
-    return Actinium.Content.list(req.params, options);
-});
+            return Actinium.Content.list(req.params, options);
+        });
 
-/**
+        /**
  * @api {Asynchronous} content-retrieve content-retrieve
  * @apiDescription Retrieve one item of content.
  * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
@@ -581,20 +620,20 @@ Actinium.Cloud.define(PLUGIN.ID, 'content-list', async req => {
  * @apiName content-retrieve
  * @apiGroup Cloud
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-retrieve', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.retrieveany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        Actinium.Cloud.define(PLUGIN.ID, 'content-retrieve', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+            const options = Actinium.Utils.CloudHasCapabilities(req, [
+                `${collection}.retrieveany`,
+            ])
+                ? Actinium.Utils.CloudMasterOptions(req)
+                : Actinium.Utils.CloudRunOptions(req);
 
-    return Actinium.Content.retrieve(req.params, options);
-});
+            return Actinium.Content.retrieve(req.params, options);
+        });
 
-/**
+        /**
  * @api {Asynchronous} content-revisions content-revisions
  * @apiDescription Retrieve branch history of some content.
  * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
@@ -611,20 +650,20 @@ Actinium.Cloud.define(PLUGIN.ID, 'content-retrieve', async req => {
  * @apiName content-revisions
  * @apiGroup Cloud
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-revisions', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.retrieveany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        Actinium.Cloud.define(PLUGIN.ID, 'content-revisions', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+            const options = Actinium.Utils.CloudHasCapabilities(req, [
+                `${collection}.retrieveany`,
+            ])
+                ? Actinium.Utils.CloudMasterOptions(req)
+                : Actinium.Utils.CloudRunOptions(req);
 
-    return Actinium.Content.revisions(req.params, options);
-});
+            return Actinium.Content.revisions(req.params, options);
+        });
 
-/**
+        /**
  * @api {Asynchronous} content-set-current content-set-current
  * @apiDescription Take content from a specified branch or revision,
  and make it the "official" version of the content. If no `history` is param is
@@ -660,24 +699,24 @@ Actinium.Cloud.define(PLUGIN.ID, 'content-revisions', async req => {
      history: { branch: 'master' }
  });
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-set-current', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.updateany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        Actinium.Cloud.define(PLUGIN.ID, 'content-set-current', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+            const options = Actinium.Utils.CloudHasCapabilities(req, [
+                `${collection}.updateany`,
+            ])
+                ? Actinium.Utils.CloudMasterOptions(req)
+                : Actinium.Utils.CloudRunOptions(req);
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    return Actinium.Content.setCurrent(req.params, options);
-});
+            return Actinium.Content.setCurrent(req.params, options);
+        });
 
-/**
+        /**
  * @api {Asynchronous} content-permissions content-permissions
  * @apiDescription Update permissions for content.
  * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
@@ -696,24 +735,24 @@ Actinium.Cloud.define(PLUGIN.ID, 'content-set-current', async req => {
  * @apiName content-permissions
  * @apiGroup Cloud
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-permissions', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.updateany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        Actinium.Cloud.define(PLUGIN.ID, 'content-permissions', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+            const options = Actinium.Utils.CloudHasCapabilities(req, [
+                `${collection}.updateany`,
+            ])
+                ? Actinium.Utils.CloudMasterOptions(req)
+                : Actinium.Utils.CloudRunOptions(req);
 
-    if (req.user) {
-        req.params.changeUser = req.user;
-    }
+            if (req.user) {
+                req.params.changeUser = req.user;
+            }
 
-    return Actinium.Content.setPermissions(req.params, options);
-});
+            return Actinium.Content.setPermissions(req.params, options);
+        });
 
-/**
+        /**
  * @api {Asynchronous} content-update content-update
  * @apiDescription Update content of a defined Type. In addition to the required parameters of
  `type` and `slug`, you can provide any parameter's that conform to the runtime fields saved for that type.
@@ -767,24 +806,24 @@ Actinium.Cloud.define(PLUGIN.ID, 'content-permissions', async req => {
      history: { branch: 'master' }
  });
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-update', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.updateany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        Actinium.Cloud.define(PLUGIN.ID, 'content-update', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+            const options = Actinium.Utils.CloudHasCapabilities(req, [
+                `${collection}.updateany`,
+            ])
+                ? Actinium.Utils.CloudMasterOptions(req)
+                : Actinium.Utils.CloudRunOptions(req);
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    return Actinium.Content.update(req.params, options);
-});
+            return Actinium.Content.update(req.params, options);
+        });
 
-/**
+        /**
  * @api {Asynchronous} content-label-branch content-label-branch
  * @apiDescription Clone a branch / specific region as a new branch.
  * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
@@ -802,24 +841,28 @@ Actinium.Cloud.define(PLUGIN.ID, 'content-update', async req => {
  * @apiName content-label-branch
  * @apiGroup Cloud
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-label-branch', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.updateany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        Actinium.Cloud.define(
+            PLUGIN.ID,
+            'content-label-branch',
+            async (req) => {
+                const collection = await Actinium.Type.getCollection(
+                    op.get(req.params, 'type'),
+                );
+                const options = Actinium.Utils.CloudHasCapabilities(req, [
+                    `${collection}.updateany`,
+                ])
+                    ? Actinium.Utils.CloudMasterOptions(req)
+                    : Actinium.Utils.CloudRunOptions(req);
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+                if (req.user) {
+                    req.params.user = req.user;
+                }
 
-    return Actinium.Content.labelBranch(req.params, options);
-});
+                return Actinium.Content.labelBranch(req.params, options);
+            },
+        );
 
-/**
+        /**
  * @api {Asynchronous} content-delete-branch content-delete-branch
  * @apiDescription Delete a branch and mark its revisions for deletion.
  * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
@@ -836,24 +879,28 @@ Actinium.Cloud.define(PLUGIN.ID, 'content-label-branch', async req => {
  * @apiName content-delete-branch
  * @apiGroup Cloud
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-delete-branch', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.updateany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        Actinium.Cloud.define(
+            PLUGIN.ID,
+            'content-delete-branch',
+            async (req) => {
+                const collection = await Actinium.Type.getCollection(
+                    op.get(req.params, 'type'),
+                );
+                const options = Actinium.Utils.CloudHasCapabilities(req, [
+                    `${collection}.updateany`,
+                ])
+                    ? Actinium.Utils.CloudMasterOptions(req)
+                    : Actinium.Utils.CloudRunOptions(req);
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+                if (req.user) {
+                    req.params.user = req.user;
+                }
 
-    return Actinium.Content.deleteBranch(req.params, options);
-});
+                return Actinium.Content.deleteBranch(req.params, options);
+            },
+        );
 
-/**
+        /**
   * @api {Asynchronous} content-clone-branch content-clone-branch
   * @apiDescription Clone a branch / specific revision as a new branch.
   * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
@@ -871,55 +918,59 @@ Actinium.Cloud.define(PLUGIN.ID, 'content-delete-branch', async req => {
   * @apiName content-clone-branch
   * @apiGroup Cloud
   */
-Actinium.Cloud.define(PLUGIN.ID, 'content-clone-branch', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.updateany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        Actinium.Cloud.define(
+            PLUGIN.ID,
+            'content-clone-branch',
+            async (req) => {
+                const collection = await Actinium.Type.getCollection(
+                    op.get(req.params, 'type'),
+                );
+                const options = Actinium.Utils.CloudHasCapabilities(req, [
+                    `${collection}.updateany`,
+                ])
+                    ? Actinium.Utils.CloudMasterOptions(req)
+                    : Actinium.Utils.CloudRunOptions(req);
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+                if (req.user) {
+                    req.params.user = req.user;
+                }
 
-    return Actinium.Content.cloneBranch(req.params, options);
-});
+                return Actinium.Content.cloneBranch(req.params, options);
+            },
+        );
 
-/**
- * @api {Asynchronous} Content.changeSlug(params,options) Content.changeSlug()
- * @apiDescription Update the official slug for existing content. This results in a new uuid.
- * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam {String} newSlug The new content slug.
- * @apiParam {String} [slug] The unique slug for the content (for lookup only).
- * @apiParam {String} [objectId] The Parse object id of the content (for lookup only).
- * @apiParam {String} [uuid] The uuid of the content. (for lookup only)
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiName Content.changeSlug
- * @apiGroup Actinium
- */
-Actinium.Cloud.define(PLUGIN.ID, 'content-change-slug', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.updateany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        /**
+         * @api {Asynchronous} Content.changeSlug(params,options) Content.changeSlug()
+         * @apiDescription Update the official slug for existing content. This results in a new uuid.
+         * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
+         * @apiParam {String} newSlug The new content slug.
+         * @apiParam {String} [slug] The unique slug for the content (for lookup only).
+         * @apiParam {String} [objectId] The Parse object id of the content (for lookup only).
+         * @apiParam {String} [uuid] The uuid of the content. (for lookup only)
+         * @apiParam (type) {String} [objectId] Parse objectId of content type
+         * @apiParam (type) {String} [uuid] UUID of content type
+         * @apiParam (type) {String} [machineName] the machine name of the existing content type
+         * @apiName Content.changeSlug
+         * @apiGroup Actinium
+         */
+        Actinium.Cloud.define(PLUGIN.ID, 'content-change-slug', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+            const options = Actinium.Utils.CloudHasCapabilities(req, [
+                `${collection}.updateany`,
+            ])
+                ? Actinium.Utils.CloudMasterOptions(req)
+                : Actinium.Utils.CloudRunOptions(req);
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    return Actinium.Content.changeSlug(req.params, options);
-});
+            return Actinium.Content.changeSlug(req.params, options);
+        });
 
-/**
+        /**
  * @api {Asynchronous} content-delete content-delete
  * @apiDescription Delete content of a defined Type. To identify the content, you must provided
 the `type` object, and one of `slug`, `objectId`, or `uuid` of the content.
@@ -933,63 +984,63 @@ the `type` object, and one of `slug`, `objectId`, or `uuid` of the content.
  * @apiName content-delete
  * @apiGroup Cloud
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-delete', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
+        Actinium.Cloud.define(PLUGIN.ID, 'content-delete', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.statusAny`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+            const options = Actinium.Utils.CloudHasCapabilities(req, [
+                `${collection}.statusAny`,
+            ])
+                ? Actinium.Utils.CloudMasterOptions(req)
+                : Actinium.Utils.CloudRunOptions(req);
 
-    return Actinium.Content.delete(req.params, options);
-});
+            return Actinium.Content.delete(req.params, options);
+        });
 
-/**
- * @api {Asynchronous} Content.trash(params,options) Content.trash()
- * @apiDescription Mark content for deletion.
- * @apiParam {Object} params parameters for content
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam (params) {String} [slug] The unique slug for the content.
- * @apiParam (params) {String} [objectId] The Parse object id of the content.
- * @apiParam (params) {String} [uuid] The uuid of the content.
- * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiParam (history) {String} [branch=master] the revision branch of current content
- * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
- * @apiName Content.trash
- * @apiGroup Actinium
- */
-Actinium.Cloud.define(PLUGIN.ID, 'content-trash', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
+        /**
+         * @api {Asynchronous} Content.trash(params,options) Content.trash()
+         * @apiDescription Mark content for deletion.
+         * @apiParam {Object} params parameters for content
+         * @apiParam {Object} options Parse Query options (controls access)
+         * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
+         * @apiParam (params) {String} [slug] The unique slug for the content.
+         * @apiParam (params) {String} [objectId] The Parse object id of the content.
+         * @apiParam (params) {String} [uuid] The uuid of the content.
+         * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
+         * @apiParam (type) {String} [objectId] Parse objectId of content type
+         * @apiParam (type) {String} [uuid] UUID of content type
+         * @apiParam (type) {String} [machineName] the machine name of the existing content type
+         * @apiParam (history) {String} [branch=master] the revision branch of current content
+         * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
+         * @apiName Content.trash
+         * @apiGroup Actinium
+         */
+        Actinium.Cloud.define(PLUGIN.ID, 'content-trash', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    const options = Actinium.Utils.CloudHasCapabilities(
-        req,
-        ['set-content-status', `${collection}.updateany`],
-        false,
-    )
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+            const options = Actinium.Utils.CloudHasCapabilities(
+                req,
+                ['set-content-status', `${collection}.updateany`],
+                false,
+            )
+                ? Actinium.Utils.CloudMasterOptions(req)
+                : Actinium.Utils.CloudRunOptions(req);
 
-    return Actinium.Content.trash(req.params, options);
-});
+            return Actinium.Content.trash(req.params, options);
+        });
 
-/**
+        /**
  * @api {Asynchronous} content-restore content-restore
  * @apiDescription Restore deleted content of a defined Type (if still in recycle).
  To identify the content, you must provided the `type` object, and `objectId` of
@@ -1002,151 +1053,157 @@ Actinium.Cloud.define(PLUGIN.ID, 'content-trash', async req => {
  * @apiName content-restore
  * @apiGroup Cloud
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-restore', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const options = Actinium.Utils.CloudHasCapabilities(req, [
-        `${collection}.createany`,
-    ])
-        ? Actinium.Utils.CloudMasterOptions(req)
-        : Actinium.Utils.CloudRunOptions(req);
+        Actinium.Cloud.define(PLUGIN.ID, 'content-restore', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+            const options = Actinium.Utils.CloudHasCapabilities(req, [
+                `${collection}.createany`,
+            ])
+                ? Actinium.Utils.CloudMasterOptions(req)
+                : Actinium.Utils.CloudRunOptions(req);
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    return Actinium.Content.restore(req.params, options);
-});
+            return Actinium.Content.restore(req.params, options);
+        });
 
-/**
- * @api {Asynchronous} content-publish content-publish
- * @apiDescription Set revision to current version and publish content.
- * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam (params) {String} [slug] The unique slug for the content.
- * @apiParam (params) {String} [objectId] The Parse object id of the content.
- * @apiParam (params) {String} [uuid] The uuid of the content.
- * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiParam (history) {String} [branch=master] the revision branch of current content
- * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
- * @apiName content-publish
- * @apiGroup Actinium
- */
-Actinium.Cloud.define(PLUGIN.ID, 'content-publish', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const canPublish = Actinium.Utils.CloudHasCapabilities(
-        req,
-        [`${collection}.publish`, 'publish-content'],
-        false,
-    );
+        /**
+         * @api {Asynchronous} content-publish content-publish
+         * @apiDescription Set revision to current version and publish content.
+         * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
+         * @apiParam (params) {String} [slug] The unique slug for the content.
+         * @apiParam (params) {String} [objectId] The Parse object id of the content.
+         * @apiParam (params) {String} [uuid] The uuid of the content.
+         * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
+         * @apiParam (type) {String} [objectId] Parse objectId of content type
+         * @apiParam (type) {String} [uuid] UUID of content type
+         * @apiParam (type) {String} [machineName] the machine name of the existing content type
+         * @apiParam (history) {String} [branch=master] the revision branch of current content
+         * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
+         * @apiName content-publish
+         * @apiGroup Actinium
+         */
+        Actinium.Cloud.define(PLUGIN.ID, 'content-publish', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+            const canPublish = Actinium.Utils.CloudHasCapabilities(
+                req,
+                [`${collection}.publish`, 'publish-content'],
+                false,
+            );
 
-    if (!canPublish) throw 'You do not have permission to publish content.';
+            if (!canPublish)
+                throw 'You do not have permission to publish content.';
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    return Actinium.Content.publish(
-        req.params,
-        Actinium.Utils.CloudMasterOptions(req),
-    );
-});
+            return Actinium.Content.publish(
+                req.params,
+                Actinium.Utils.CloudMasterOptions(req),
+            );
+        });
 
-/**
- * @api {Asynchronous} content-set-status content-set-status
- * @apiDescription Set revision to current version and set the status of the content.
- * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam {String} [slug] The unique slug for the content.
- * @apiParam {String} [objectId] The Parse object id of the content.
- * @apiParam {String} [uuid] The uuid of the content.
- * @apiParam {Object} [history] revision history to retrieve, containing branch and revision index.
- * @apiParam {String} [userId] User objectId that set the status of the content.
- * @apiParam {String} [reason] Change log change reason. Cause of setStatus action, default ENUMS.CHANGES.SET_STATUS
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiParam (history) {String} [branch=master] the revision branch of current content
- * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
- * @apiName content-set-status
- * @apiGroup Actinium
- */
-Actinium.Cloud.define(PLUGIN.ID, 'content-set-status', async req => {
-    const options = Actinium.Utils.CloudRunOptions(req);
-    const masterOptions = Actinium.Utils.CloudMasterOptions(req);
+        /**
+         * @api {Asynchronous} content-set-status content-set-status
+         * @apiDescription Set revision to current version and set the status of the content.
+         * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
+         * @apiParam {String} [slug] The unique slug for the content.
+         * @apiParam {String} [objectId] The Parse object id of the content.
+         * @apiParam {String} [uuid] The uuid of the content.
+         * @apiParam {Object} [history] revision history to retrieve, containing branch and revision index.
+         * @apiParam {String} [userId] User objectId that set the status of the content.
+         * @apiParam {String} [reason] Change log change reason. Cause of setStatus action, default ENUMS.CHANGES.SET_STATUS
+         * @apiParam (type) {String} [objectId] Parse objectId of content type
+         * @apiParam (type) {String} [uuid] UUID of content type
+         * @apiParam (type) {String} [machineName] the machine name of the existing content type
+         * @apiParam (history) {String} [branch=master] the revision branch of current content
+         * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
+         * @apiName content-set-status
+         * @apiGroup Actinium
+         */
+        Actinium.Cloud.define(PLUGIN.ID, 'content-set-status', async (req) => {
+            const options = Actinium.Utils.CloudRunOptions(req);
+            const masterOptions = Actinium.Utils.CloudMasterOptions(req);
 
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
 
-    const status = op.get(req.params, 'status');
+            const status = op.get(req.params, 'status');
 
-    if (status === ENUMS.STATUS.TRASH)
-        return Actinium.Cloud.run('content-trash', req.params, options);
+            if (status === ENUMS.STATUS.TRASH)
+                return Actinium.Cloud.run('content-trash', req.params, options);
 
-    if (status === ENUMS.STATUS.PUBLISHED)
-        return Actinium.Cloud.run('content-publish', req.params, options);
+            if (status === ENUMS.STATUS.PUBLISHED)
+                return Actinium.Cloud.run(
+                    'content-publish',
+                    req.params,
+                    options,
+                );
 
-    const canSet = Actinium.Utils.CloudHasCapabilities(
-        req,
-        [`${collection}.setstatus-${status}`, 'set-content-status'],
-        false,
-    );
+            const canSet = Actinium.Utils.CloudHasCapabilities(
+                req,
+                [`${collection}.setstatus-${status}`, 'set-content-status'],
+                false,
+            );
 
-    if (!canSet) throw 'You do not have permission to set this status.';
+            if (!canSet) throw 'You do not have permission to set this status.';
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    return Actinium.Content.setStatus(req.params, masterOptions);
-});
+            return Actinium.Content.setStatus(req.params, masterOptions);
+        });
 
-/**
- * @api {Asynchronous} Content.unpublish(params,options) Content.unpublish()
- * @apiDescription Unpublish current version of content.
- * @apiParam {Object} params parameters for content
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam (params) {String} [slug] The unique slug for the content.
- * @apiParam (params) {String} [objectId] The Parse object id of the content.
- * @apiParam (params) {String} [uuid] The uuid of the content.
- * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiParam (history) {String} [branch=master] the revision branch of current content
- * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
- * @apiName Content.unpublish
- * @apiGroup Actinium
- */
-Actinium.Cloud.define(PLUGIN.ID, 'content-unpublish', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-    const canUnpublish = Actinium.Utils.CloudHasCapabilities(
-        req,
-        [`${collection}.unpublish`, 'unpublish-content'],
-        false,
-    );
+        /**
+         * @api {Asynchronous} Content.unpublish(params,options) Content.unpublish()
+         * @apiDescription Unpublish current version of content.
+         * @apiParam {Object} params parameters for content
+         * @apiParam {Object} options Parse Query options (controls access)
+         * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
+         * @apiParam (params) {String} [slug] The unique slug for the content.
+         * @apiParam (params) {String} [objectId] The Parse object id of the content.
+         * @apiParam (params) {String} [uuid] The uuid of the content.
+         * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
+         * @apiParam (type) {String} [objectId] Parse objectId of content type
+         * @apiParam (type) {String} [uuid] UUID of content type
+         * @apiParam (type) {String} [machineName] the machine name of the existing content type
+         * @apiParam (history) {String} [branch=master] the revision branch of current content
+         * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
+         * @apiName Content.unpublish
+         * @apiGroup Actinium
+         */
+        Actinium.Cloud.define(PLUGIN.ID, 'content-unpublish', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+            const canUnpublish = Actinium.Utils.CloudHasCapabilities(
+                req,
+                [`${collection}.unpublish`, 'unpublish-content'],
+                false,
+            );
 
-    if (!canUnpublish) throw 'You do not have permission to unpublish content.';
+            if (!canUnpublish)
+                throw 'You do not have permission to unpublish content.';
 
-    if (req.user) {
-        req.params.user = req.user;
-    }
+            if (req.user) {
+                req.params.user = req.user;
+            }
 
-    return Actinium.Content.unpublish(
-        req.params,
-        Actinium.Utils.CloudMasterOptions(req),
-    );
-});
+            return Actinium.Content.unpublish(
+                req.params,
+                Actinium.Utils.CloudMasterOptions(req),
+            );
+        });
 
-/**
+        /**
  * @api {Asynchronous} content-schedule content-schedule
  * @apiDescription Schedule the publishing / unpublishing of content. If `history` is provided, that revision will be
  made current and published on optional `sunrise`. On optional `sunset`, the current version of the content will be unpublished.
@@ -1166,7 +1223,8 @@ Actinium.Cloud.define(PLUGIN.ID, 'content-unpublish', async req => {
  * @apiName content-schedule
  * @apiGroup Cloud
  * @apiExample Usage
-const moment = require('moment');
+import moment from 'moment';
+
 const now = moment();
 
 // publish version 3 of master branch a month from now
@@ -1182,81 +1240,89 @@ Actinium.Cloud.run(
   }
 );
  */
-Actinium.Cloud.define(PLUGIN.ID, 'content-schedule', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
+        Actinium.Cloud.define(PLUGIN.ID, 'content-schedule', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
 
-    if (req.user) {
-        req.params.user = req.user;
+            if (req.user) {
+                req.params.user = req.user;
+            }
+
+            const canPublish = Actinium.Utils.CloudHasCapabilities(
+                req,
+                [`${collection}.publish`, 'publish-content'],
+                false,
+            );
+            const canUnpublish = Actinium.Utils.CloudHasCapabilities(
+                req,
+                [`${collection}.unpublish`, 'unpublish-content'],
+                false,
+            );
+
+            if (!canPublish)
+                throw `You must have ${collection}.publish or publish-content capability to schedule content.`;
+            if (!canUnpublish)
+                throw `You must have ${collection}.unpublish or unpublish-content capability to schedule content.`;
+
+            return Actinium.Content.schedule(
+                req.params,
+                Actinium.Utils.CloudMasterOptions(req),
+            );
+        });
+
+        /**
+         * @api {Asynchronous} Content.unschedule(params,options) Content.unschedule()
+         * @apiDescription Remove scheduled publishing job by id.
+         * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
+         * @apiParam {String} [slug] The unique slug for the content.
+         * @apiParam {String} [objectId] The Parse object id of the content.
+         * @apiParam {String} [uuid] The uuid of the content.
+         * @apiParam {String} jobId The id of the schedule job.
+         * @apiParam (type) {String} [objectId] Parse objectId of content type
+         * @apiParam (type) {String} [uuid] UUID of content type
+         * @apiParam (type) {String} [machineName] the machine name of the existing content type
+         * @apiName Content.unschedule
+         * @apiGroup Actinium
+         */
+        Actinium.Cloud.define(PLUGIN.ID, 'content-unschedule', async (req) => {
+            const collection = await Actinium.Type.getCollection(
+                op.get(req.params, 'type'),
+            );
+
+            if (req.user) {
+                req.params.user = req.user;
+            }
+
+            const canPublish = Actinium.Utils.CloudHasCapabilities(
+                req,
+                [`${collection}.publish`, 'publish-content'],
+                false,
+            );
+            const canUnpublish = Actinium.Utils.CloudHasCapabilities(
+                req,
+                [`${collection}.unpublish`, 'unpublish-content'],
+                false,
+            );
+
+            if (!canPublish)
+                throw `You must have ${collection}.publish or publish-content capability to schedule content.`;
+            if (!canUnpublish)
+                throw `You must have ${collection}.unpublish or unpublish-content capability to schedule content.`;
+
+            return Actinium.Content.unschedule(
+                req.params,
+                Actinium.Utils.CloudMasterOptions(req),
+            );
+        });
+    } catch (err) {
+        console.log('ERROR');
+        console.log(err);
     }
+};
 
-    const canPublish = Actinium.Utils.CloudHasCapabilities(
-        req,
-        [`${collection}.publish`, 'publish-content'],
-        false,
-    );
-    const canUnpublish = Actinium.Utils.CloudHasCapabilities(
-        req,
-        [`${collection}.unpublish`, 'unpublish-content'],
-        false,
-    );
-
-    if (!canPublish)
-        throw `You must have ${collection}.publish or publish-content capability to schedule content.`;
-    if (!canUnpublish)
-        throw `You must have ${collection}.unpublish or unpublish-content capability to schedule content.`;
-
-    return Actinium.Content.schedule(
-        req.params,
-        Actinium.Utils.CloudMasterOptions(req),
-    );
-});
-
-/**
- * @api {Asynchronous} Content.unschedule(params,options) Content.unschedule()
- * @apiDescription Remove scheduled publishing job by id.
- * @apiParam {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam {String} [slug] The unique slug for the content.
- * @apiParam {String} [objectId] The Parse object id of the content.
- * @apiParam {String} [uuid] The uuid of the content.
- * @apiParam {String} jobId The id of the schedule job.
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiName Content.unschedule
- * @apiGroup Actinium
- */
-Actinium.Cloud.define(PLUGIN.ID, 'content-unschedule', async req => {
-    const collection = await Actinium.Type.getCollection(
-        op.get(req.params, 'type'),
-    );
-
-    if (req.user) {
-        req.params.user = req.user;
-    }
-
-    const canPublish = Actinium.Utils.CloudHasCapabilities(
-        req,
-        [`${collection}.publish`, 'publish-content'],
-        false,
-    );
-    const canUnpublish = Actinium.Utils.CloudHasCapabilities(
-        req,
-        [`${collection}.unpublish`, 'unpublish-content'],
-        false,
-    );
-
-    if (!canPublish)
-        throw `You must have ${collection}.publish or publish-content capability to schedule content.`;
-    if (!canUnpublish)
-        throw `You must have ${collection}.unpublish or unpublish-content capability to schedule content.`;
-
-    return Actinium.Content.unschedule(
-        req.params,
-        Actinium.Utils.CloudMasterOptions(req),
-    );
-});
+// module.exports = Object.keys(Actinium).length > 0 ? MOD(Actinium) : MOD;
+export default MOD();
 
 /*
 1. CLP (Class Level Permissions) is primarily guard against using Parse Cloud REST API improperly

@@ -1,4 +1,4 @@
-module.exports = [
+export default [
     {
         blueprint: 'components',
         route: '/admin/components',

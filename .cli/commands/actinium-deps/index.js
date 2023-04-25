@@ -1,4 +1,4 @@
-const copy = require('clipboardy');
+import copy from 'clipboardy';
 
 const { chalk, fs, op, path } = arcli;
 
@@ -58,7 +58,7 @@ const ACTION = async ({ opt, props }) => {
         const pkgFilePath = dest(dir, 'package.json');
         if (!fs.existsSync(pkgFilePath)) return obj;
 
-        const pkg = require(pkgFilePath);
+        const pkg = fs.readJsonSync(pkgFilePath);
 
         const { version = 'latest' } = pkg;
 
@@ -114,7 +114,4 @@ const COMMAND = ({ program, props }) =>
         .option(FLAGS.ver.flag, FLAGS.ver.desc)
         .on('--help', HELP);
 
-module.exports = {
-    COMMAND,
-    NAME,
-};
+export { COMMAND, NAME };

@@ -1,4 +1,8 @@
-const chalk = require('chalk');
+import chalk from 'chalk';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PLUGIN = {
     ID: 'SAMPLE-PLUGIN',
@@ -53,8 +57,8 @@ Actinium.Hook.register('uninstall', async ({ ID }) => {
     BOOT(`  Uninstalled ${PLUGIN.ID}!`);
 });
 
-Actinium.Cloud.define(PLUGIN.ID, 'sample-plugin', async req => {
+Actinium.Cloud.define(PLUGIN.ID, 'sample-plugin', async () => {
     return { sample: 'plugin' };
 });
 
-module.exports = PLUGIN;
+export default PLUGIN;

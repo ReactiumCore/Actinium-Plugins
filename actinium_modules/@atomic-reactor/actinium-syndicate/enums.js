@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     DEFAULT_ACCESS_SECRET:
         '191bec2198e6fdb44fafb3e0cabbe631c0b03eef91f2f602d96898921e82506e916ddda5dab297f41fd5eb8e197f98cef98943c3d3de390d1e53e4fefe675771',
     DEFAULT_REFRESH_SECRET:

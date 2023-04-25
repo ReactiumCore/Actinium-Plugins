@@ -1,39 +1,39 @@
-const ENUMS = require('./enums');
-const op = require('object-path');
-const {
-    CloudHasCapabilities,
-    CloudRunOptions,
-} = require(`${ACTINIUM_DIR}/lib/utils`);
+import ENUMS from './enums.js';
+import PLUGIN from './meta.js';
+import PLUGIN_SDK from './sdk.js';
+import PLUGIN_SCHEMA from './schema.js';
 
-const COLLECTION = ENUMS.COLLECTION;
-const PLUGIN = require('./meta');
-const PLUGIN_SCHEMA = require('./schema');
-const PLUGIN_SDK = require('./sdk');
+import op from 'object-path';
 
-// Create SDK Singleton
-Actinium[COLLECTION] = op.get(Actinium, COLLECTION, PLUGIN_SDK);
+const MOD = () => {
+    const { CloudHasCapabilities, CloudRunOptions } = Actinium.Utils;
 
-// Register Plugin
-Actinium.Plugin.register(PLUGIN, true);
+    const COLLECTION = ENUMS.COLLECTION;
 
-// Register Capabilities & Schema
-Actinium.Hook.register('activate', async ({ ID }) => {
-    if (ID !== PLUGIN.ID) return;
+    // Create SDK Singleton
+    Actinium[COLLECTION] = op.get(Actinium, COLLECTION, PLUGIN_SDK);
 
-    Object.keys(PLUGIN_SCHEMA.ACTIONS.RECYCLE).forEach(action =>
-        Actinium.Capability.register(`${COLLECTION}.${action}`),
-    );
+    // Register Plugin
+    Actinium.Plugin.register(PLUGIN, true);
 
-    Actinium.Collection.register(
-        COLLECTION,
-        PLUGIN_SCHEMA.ACTIONS.RECYCLE,
-        PLUGIN_SCHEMA.SCHEMA.RECYCLE,
-    );
-});
+    // Register Capabilities & Schema
+    Actinium.Hook.register('activate', async ({ ID }) => {
+        if (ID !== PLUGIN.ID) return;
 
-// Define Cloud functions
+        Object.keys(PLUGIN_SCHEMA.ACTIONS.RECYCLE).forEach((action) =>
+            Actinium.Capability.register(`${COLLECTION}.${action}`),
+        );
 
-/**
+        Actinium.Collection.register(
+            COLLECTION,
+            PLUGIN_SCHEMA.ACTIONS.RECYCLE,
+            PLUGIN_SCHEMA.SCHEMA.RECYCLE,
+        );
+    });
+
+    // Define Cloud functions
+
+    /**
  * @api {Cloud} recycle-archive recycle-archive
  * @apiVersion 3.1.7
  * @apiGroup Cloud
@@ -48,19 +48,19 @@ Actinium.Cloud.run('recycle-archive', {
   object: MyUserObject,
 });
  */
-Actinium.Cloud.define(PLUGIN.ID, 'recycle-archive', async req => {
-    const cap = await Actinium.Setting.get('recycle.capabilities.create', [
-        'Recycle.create',
-    ]);
+    Actinium.Cloud.define(PLUGIN.ID, 'recycle-archive', async (req) => {
+        const cap = await Actinium.Setting.get('recycle.capabilities.create', [
+            'Recycle.create',
+        ]);
 
-    if (!CloudHasCapabilities(req, cap))
-        return Promise.reject(ENUMS.ERRORS.PERMISSION);
+        if (!CloudHasCapabilities(req, cap))
+            return Promise.reject(ENUMS.ERRORS.PERMISSION);
 
-    req.params['user'] = req.user;
-    return Actinium.Recycle.archive(req.params, CloudRunOptions(req));
-});
+        req.params['user'] = req.user;
+        return Actinium.Recycle.archive(req.params, CloudRunOptions(req));
+    });
 
-/**
+    /**
  * @api {Cloud} recycle-archived recycle-archived
  * @apiVersion 3.1.7
  * @apiGroup Cloud
@@ -72,19 +72,20 @@ Actinium.Cloud.define(PLUGIN.ID, 'recycle-archive', async req => {
  * @apiExample Example Usage:
 Actinium.Cloud.run('recycle-archived', { collection: '_User' });
  */
-Actinium.Cloud.define(PLUGIN.ID, 'recycle-archived', async req => {
-    const cap = await Actinium.Setting.get('recycle.capabilities.retrieve', [
-        'Recycle.retrieve',
-    ]);
+    Actinium.Cloud.define(PLUGIN.ID, 'recycle-archived', async (req) => {
+        const cap = await Actinium.Setting.get(
+            'recycle.capabilities.retrieve',
+            ['Recycle.retrieve'],
+        );
 
-    if (!CloudHasCapabilities(req, cap))
-        return Promise.reject(ENUMS.ERRORS.PERMISSION);
+        if (!CloudHasCapabilities(req, cap))
+            return Promise.reject(ENUMS.ERRORS.PERMISSION);
 
-    req.params['type'] = 'archive';
-    return Actinium.Recycle.retrieve(req.params, CloudRunOptions(req));
-});
+        req.params['type'] = 'archive';
+        return Actinium.Recycle.retrieve(req.params, CloudRunOptions(req));
+    });
 
-/**
+    /**
  * @api {Cloud} recycle recycle
  * @apiVersion 3.1.7
  * @apiGroup Cloud
@@ -99,19 +100,19 @@ Actinium.Cloud.run('recycle', {
   object: SomeObject,
 });
  */
-Actinium.Cloud.define(PLUGIN.ID, 'recycle', async req => {
-    const cap = await Actinium.Setting.get('recycle.capabilities.create', [
-        'Recycle.create',
-    ]);
+    Actinium.Cloud.define(PLUGIN.ID, 'recycle', async (req) => {
+        const cap = await Actinium.Setting.get('recycle.capabilities.create', [
+            'Recycle.create',
+        ]);
 
-    if (!CloudHasCapabilities(req, cap))
-        return Promise.reject(ENUMS.ERRORS.PERMISSION);
+        if (!CloudHasCapabilities(req, cap))
+            return Promise.reject(ENUMS.ERRORS.PERMISSION);
 
-    req.params['user'] = req.user;
-    return Actinium.Recycle.trash(req.params, CloudRunOptions(req));
-});
+        req.params['user'] = req.user;
+        return Actinium.Recycle.trash(req.params, CloudRunOptions(req));
+    });
 
-/**
+    /**
  * @api {Cloud} recycle-purge recycle-purge
  * @apiVersion 3.1.7
  * @apiGroup Cloud
@@ -123,18 +124,18 @@ Actinium.Cloud.define(PLUGIN.ID, 'recycle', async req => {
  * @apiExample Example Usage:
 Actinium.Cloud.run('recycle-purge', { collect: '_User' });
  */
-Actinium.Cloud.define(PLUGIN.ID, 'recycle-purge', async req => {
-    const cap = await Actinium.Setting.get('recycle.capabilities.delete', [
-        'Recycle.delete',
-    ]);
+    Actinium.Cloud.define(PLUGIN.ID, 'recycle-purge', async (req) => {
+        const cap = await Actinium.Setting.get('recycle.capabilities.delete', [
+            'Recycle.delete',
+        ]);
 
-    if (!CloudHasCapabilities(req, cap))
-        return Promise.reject(ENUMS.ERRORS.PERMISSION);
+        if (!CloudHasCapabilities(req, cap))
+            return Promise.reject(ENUMS.ERRORS.PERMISSION);
 
-    return Actinium.Recycle.purge(req.params, CloudRunOptions(req));
-});
+        return Actinium.Recycle.purge(req.params, CloudRunOptions(req));
+    });
 
-/**
+    /**
  * @api {Cloud} recycled recycled
  * @apiVersion 3.1.7
  * @apiGroup Cloud
@@ -146,18 +147,19 @@ Actinium.Cloud.define(PLUGIN.ID, 'recycle-purge', async req => {
  * @apiExample Example Usage:
 Actinium.Cloud.run('recycled', { collection: '_User' });
  */
-Actinium.Cloud.define(PLUGIN.ID, 'recycled', async req => {
-    const cap = await Actinium.Setting.get('recycle.capabilities.retrieve', [
-        'Recycle.retrieve',
-    ]);
+    Actinium.Cloud.define(PLUGIN.ID, 'recycled', async (req) => {
+        const cap = await Actinium.Setting.get(
+            'recycle.capabilities.retrieve',
+            ['Recycle.retrieve'],
+        );
 
-    if (!CloudHasCapabilities(req, cap))
-        return Promise.reject(ENUMS.ERRORS.PERMISSION);
+        if (!CloudHasCapabilities(req, cap))
+            return Promise.reject(ENUMS.ERRORS.PERMISSION);
 
-    return Actinium.Recycle.retrieve(req.params, CloudRunOptions(req));
-});
+        return Actinium.Recycle.retrieve(req.params, CloudRunOptions(req));
+    });
 
-/**
+    /**
  * @api {Cloud} recycle-restore recycle-restore
  * @apiVersion 3.1.7
  * @apiGroup Cloud
@@ -168,18 +170,18 @@ Actinium.Cloud.define(PLUGIN.ID, 'recycled', async req => {
  * @apiExample Example Usage:
 Actinium.Cloud.run('recycle-restore', { object: 'aetkalq43r'});
  */
-Actinium.Cloud.define(PLUGIN.ID, 'recycle-restore', async req => {
-    const cap = await Actinium.Setting.get('recycle.capabilities.create', [
-        'Recycle.create',
-    ]);
+    Actinium.Cloud.define(PLUGIN.ID, 'recycle-restore', async (req) => {
+        const cap = await Actinium.Setting.get('recycle.capabilities.create', [
+            'Recycle.create',
+        ]);
 
-    if (!CloudHasCapabilities(req, cap))
-        return Promise.reject(ENUMS.ERRORS.PERMISSION);
+        if (!CloudHasCapabilities(req, cap))
+            return Promise.reject(ENUMS.ERRORS.PERMISSION);
 
-    return Actinium.Recycle.restore(req.params, CloudRunOptions(req));
-});
+        return Actinium.Recycle.restore(req.params, CloudRunOptions(req));
+    });
 
-/**
+    /**
  * @api {Cloud} recycle-revision recycle-revision
  * @apiVersion 3.1.7
  * @apiGroup Cloud
@@ -194,19 +196,19 @@ Actinium.Cloud.run('recycle-revision', {
   object: SomeObject,
 });
  */
-Actinium.Cloud.define(PLUGIN.ID, 'recycle-revision', async req => {
-    const cap = await Actinium.Setting.get('recycle.capabilities.create', [
-        'Recycle.create',
-    ]);
+    Actinium.Cloud.define(PLUGIN.ID, 'recycle-revision', async (req) => {
+        const cap = await Actinium.Setting.get('recycle.capabilities.create', [
+            'Recycle.create',
+        ]);
 
-    if (!CloudHasCapabilities(req, cap))
-        return Promise.reject(ENUMS.ERRORS.PERMISSION);
+        if (!CloudHasCapabilities(req, cap))
+            return Promise.reject(ENUMS.ERRORS.PERMISSION);
 
-    req.params['user'] = req.user;
-    return Actinium.Recycle.revision(req.params, CloudRunOptions(req));
-});
+        req.params['user'] = req.user;
+        return Actinium.Recycle.revision(req.params, CloudRunOptions(req));
+    });
 
-/**
+    /**
  * @api {Cloud} recycle-revisions recycle-revisions
  * @apiVersion 3.1.7
  * @apiGroup Cloud
@@ -218,14 +220,18 @@ Actinium.Cloud.define(PLUGIN.ID, 'recycle-revision', async req => {
  * @apiExample Example Usage:
 Actinium.Cloud.run('recycle-revisions', { collection: '_User' });
  */
-Actinium.Cloud.define(PLUGIN.ID, 'recycle-revisions', async req => {
-    const cap = await Actinium.Setting.get('recycle.capabilities.retrieve', [
-        'Recycle.retrieve',
-    ]);
+    Actinium.Cloud.define(PLUGIN.ID, 'recycle-revisions', async (req) => {
+        const cap = await Actinium.Setting.get(
+            'recycle.capabilities.retrieve',
+            ['Recycle.retrieve'],
+        );
 
-    if (!CloudHasCapabilities(req, cap))
-        return Promise.reject(ENUMS.ERRORS.PERMISSION);
+        if (!CloudHasCapabilities(req, cap))
+            return Promise.reject(ENUMS.ERRORS.PERMISSION);
 
-    req.params['type'] = 'revision';
-    return Actinium.Recycle.retrieve(req.params, CloudRunOptions(req));
-});
+        req.params['type'] = 'revision';
+        return Actinium.Recycle.retrieve(req.params, CloudRunOptions(req));
+    });
+};
+
+export default MOD();

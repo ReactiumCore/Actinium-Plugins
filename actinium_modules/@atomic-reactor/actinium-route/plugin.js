@@ -1,203 +1,209 @@
-const chalk = require('chalk');
-const op = require('object-path');
-const _ = require('underscore');
-const PLUGIN = require('./info');
+import op from 'object-path';
+import PLUGIN from './info.js';
+import PLUGIN_SDK from './sdk.js';
+import PLUGIN_ROUTES from './routes.js';
+
 const COLLECTION = PLUGIN.ID;
 
-/**
- * ----------------------------------------------------------------------------
- * Extend Actinium SDK
- * ----------------------------------------------------------------------------
- */
-const PLUGIN_SDK = require('./sdk');
-Actinium['Route'] = op.get(Actinium, 'Route', PLUGIN_SDK);
+const MOD = () => {
+    /**
+     * ----------------------------------------------------------------------------
+     * Extend Actinium SDK
+     * ----------------------------------------------------------------------------
+     */
+    Actinium.Route = Actinium.Route || PLUGIN_SDK;
 
-/**
- * ----------------------------------------------------------------------------
- * Plugin registration
- * ----------------------------------------------------------------------------
- */
-Actinium.Plugin.register(PLUGIN, true);
+    /**
+     * ----------------------------------------------------------------------------
+     * Plugin registration
+     * ----------------------------------------------------------------------------
+     */
+    Actinium.Plugin.register(PLUGIN, true);
 
-/**
- * ----------------------------------------------------------------------------
- * Hook registration
- * ----------------------------------------------------------------------------
- */
-const PLUGIN_ROUTES = require('./routes');
-const saveRoutes = async () => {
-    for (const route of PLUGIN_ROUTES) {
-        await Actinium.Route.save(route);
-    }
+    /**
+     * ----------------------------------------------------------------------------
+     * Hook registration
+     * ----------------------------------------------------------------------------
+     */
+
+    const saveRoutes = async () => {
+        for (const route of PLUGIN_ROUTES) {
+            await Actinium.Route.save(route);
+        }
+    };
+
+    Actinium.Capability.register('admin-ui.view', {
+        allowed: ['contributor', 'moderator', 'user'],
+    });
+
+    // Update routes on startup
+    Actinium.Hook.register('start', async () => {
+        if (Actinium.Plugin.isActive(PLUGIN.ID)) {
+            await saveRoutes();
+        }
+    });
+
+    // Update routes on plugin activation
+    Actinium.Hook.register('activate', async ({ ID }) => {
+        if (ID === PLUGIN.ID) {
+            await saveRoutes();
+        }
+    });
+
+    // Update routes on plugin update
+    Actinium.Hook.register('update', async ({ ID }) => {
+        if (ID === PLUGIN.ID) {
+            await saveRoutes();
+        }
+    });
+
+    // Remove routes on deactivation
+    Actinium.Hook.register('deactivate', async ({ ID }) => {
+        if (ID === PLUGIN.ID) {
+            for (const route of PLUGIN_ROUTES) {
+                await Actinium.Route.delete(route);
+            }
+        }
+    });
+
+    Actinium.Hook.register('schema', async ({ ID }) => {
+        if (ID !== PLUGIN.ID) return;
+
+        const PLUGIN_SCHEMA = require('./schema');
+        PLUGIN_SCHEMA.forEach((item) => {
+            const { actions = {}, collection, schema = {}, indexes } = item;
+            if (!collection) return;
+
+            Actinium.Collection.register(collection, actions, schema, indexes);
+        });
+
+        Actinium.Capability.register(
+            `${COLLECTION}.create`,
+            {
+                allowed: ['moderator', 'contributor'],
+            },
+            1000,
+        );
+
+        Actinium.Capability.register(
+            `${COLLECTION}.retrieve`,
+            {
+                allowed: ['moderator', 'contributor'],
+            },
+            1000,
+        );
+
+        Actinium.Capability.register(
+            `${COLLECTION}.update`,
+            {
+                allowed: ['moderator', 'contributor'],
+            },
+            1000,
+        );
+
+        Actinium.Capability.register(
+            `${COLLECTION}.delete`,
+            {
+                allowed: ['moderator', 'contributor'],
+            },
+            1000,
+        );
+
+        Actinium.Capability.register(`${COLLECTION}.addField`, {}, 1000);
+    });
+
+    /**
+     * ----------------------------------------------------------------------------
+     * Cloud Functions
+     * ----------------------------------------------------------------------------
+     */
+    [
+        { cloud: 'route-save', sdk: 'save' },
+        { cloud: 'route-retrieve', sdk: 'retrieve' },
+        { cloud: 'routes', sdk: 'list' },
+        { cloud: 'route-delete', sdk: 'delete' },
+    ].forEach(({ cloud, sdk }) => {
+        Actinium.Cloud.define(PLUGIN.ID, cloud, async (req) => {
+            return op.get(Actinium.Route, sdk, Promise.resolve)(
+                req.params,
+                Actinium.Utils.CloudRunOptions(req),
+                req,
+            );
+        });
+    });
+
+    Actinium.Hook.register('route-save', async (req) => {
+        const route = req.object.toJSON();
+
+        if (!route.route) throw 'route required.';
+        if (req.object.isNew()) {
+            const routeObj = PLUGIN_SDK.retrieve({ route: route.route });
+            if (routeObj) {
+                req.object.id = routeObj.objectId;
+            }
+        }
+
+        if (!route.blueprint) throw 'blueprint required.';
+    });
+
+    Actinium.Hook.register('route-delete', async (req) => {
+        if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+        const route = req.object.toJSON();
+
+        if (op.get(route, 'meta.builtIn')) {
+            throw 'Deleting built-in route not permitted.';
+        }
+    });
+
+    // if possible, add permission to these results
+    Actinium.Hook.register('route-list-output', async (...params) => {
+        const [{ routes = [] }, , , , , , req] = params;
+
+        routes.forEach((route) => {
+            const capabilities = route.get('capabilities');
+            if (!Array.isArray(capabilities) || capabilities.length < 1)
+                route.set('permitted', true);
+            else if (req) {
+                route.set(
+                    'permitted',
+                    Actinium.Utils.CloudHasCapabilities(
+                        req,
+                        capabilities,
+                        false,
+                    ),
+                );
+            }
+        });
+    });
+
+    /**
+     * ----------------------------------------------------------------------------
+     * Cloud Hooks
+     * ----------------------------------------------------------------------------
+     */
+    [
+        {
+            func: 'beforeSave',
+            hook: 'beforeSave-route',
+        },
+        {
+            func: 'beforeDelete',
+            hook: 'beforeDelete-route',
+        },
+        {
+            func: 'afterSave',
+            hook: 'afterSave-route',
+        },
+    ].forEach(({ func, hook }) => {
+        Actinium.Cloud[func](COLLECTION, async (req) => {
+            await Actinium.Hook.run(hook, req);
+        });
+    });
+
+    // Actinium.Hook.register('route-list-query', async (qry, params, options, collection) => {});
 };
 
-Actinium.Capability.register('admin-ui.view', {
-    allowed: ['contributor', 'moderator', 'user'],
-});
-
-// Update routes on startup
-Actinium.Hook.register('start', async () => {
-    if (Actinium.Plugin.isActive(PLUGIN.ID)) {
-        await saveRoutes();
-    }
-});
-
-// Update routes on plugin activation
-Actinium.Hook.register('activate', async ({ ID }) => {
-    if (ID === PLUGIN.ID) {
-        await saveRoutes();
-    }
-});
-
-// Update routes on plugin update
-Actinium.Hook.register('update', async ({ ID }) => {
-    if (ID === PLUGIN.ID) {
-        await saveRoutes();
-    }
-});
-
-// Remove routes on deactivation
-Actinium.Hook.register('deactivate', async ({ ID }) => {
-    if (ID === PLUGIN.ID) {
-        for (const route of PLUGIN_ROUTES) {
-            await Actinium.Route.delete(route);
-        }
-    }
-});
-
-Actinium.Hook.register('schema', async ({ ID }) => {
-    if (ID !== PLUGIN.ID) return;
-
-    const PLUGIN_SCHEMA = require('./schema');
-    PLUGIN_SCHEMA.forEach(item => {
-        const { actions = {}, collection, schema = {}, indexes } = item;
-        if (!collection) return;
-
-        Actinium.Collection.register(collection, actions, schema, indexes);
-    });
-
-    Actinium.Capability.register(
-        `${COLLECTION}.create`,
-        {
-            allowed: ['moderator', 'contributor'],
-        },
-        1000,
-    );
-
-    Actinium.Capability.register(
-        `${COLLECTION}.retrieve`,
-        {
-            allowed: ['moderator', 'contributor'],
-        },
-        1000,
-    );
-
-    Actinium.Capability.register(
-        `${COLLECTION}.update`,
-        {
-            allowed: ['moderator', 'contributor'],
-        },
-        1000,
-    );
-
-    Actinium.Capability.register(
-        `${COLLECTION}.delete`,
-        {
-            allowed: ['moderator', 'contributor'],
-        },
-        1000,
-    );
-
-    Actinium.Capability.register(`${COLLECTION}.addField`, {}, 1000);
-});
-
-/**
- * ----------------------------------------------------------------------------
- * Cloud Functions
- * ----------------------------------------------------------------------------
- */
-[
-    { cloud: 'route-save', sdk: 'save' },
-    { cloud: 'route-retrieve', sdk: 'retrieve' },
-    { cloud: 'routes', sdk: 'list' },
-    { cloud: 'route-delete', sdk: 'delete' },
-].forEach(({ cloud, sdk }) => {
-    Actinium.Cloud.define(PLUGIN.ID, cloud, async req => {
-        return op.get(PLUGIN_SDK, sdk, Promise.resolve)(
-            req.params,
-            Actinium.Utils.CloudRunOptions(req),
-            req,
-        );
-    });
-});
-
-Actinium.Hook.register('route-save', async req => {
-    const route = req.object.toJSON();
-
-    if (!route.route) throw 'route required.';
-    if (req.object.isNew()) {
-        const routeObj = PLUGIN_SDK.retrieve({ route: route.route });
-        if (routeObj) {
-            req.object.id = routeObj.objectId;
-        }
-    }
-
-    if (!route.blueprint) throw 'blueprint required.';
-});
-
-Actinium.Hook.register('route-delete', async req => {
-    if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
-    const route = req.object.toJSON();
-
-    if (op.get(route, 'meta.builtIn')) {
-        throw 'Deleting built-in route not permitted.';
-    }
-});
-
-// if possible, add permission to these results
-Actinium.Hook.register('route-list-output', async (...params) => {
-    const [{ routes = [] }, , , , , , req] = params;
-
-    routes.forEach(route => {
-        const capabilities = route.get('capabilities');
-        if (!Array.isArray(capabilities) || capabilities.length < 1)
-            route.set('permitted', true);
-        else if (req) {
-            route.set(
-                'permitted',
-                Actinium.Utils.CloudHasCapabilities(req, capabilities, false),
-            );
-        }
-    });
-});
-
-/**
- * ----------------------------------------------------------------------------
- * Cloud Hooks
- * ----------------------------------------------------------------------------
- */
-[
-    {
-        func: 'beforeSave',
-        hook: 'beforeSave-route',
-    },
-    {
-        func: 'beforeDelete',
-        hook: 'beforeDelete-route',
-    },
-    {
-        func: 'afterSave',
-        hook: 'afterSave-route',
-    },
-].forEach(({ func, hook }) => {
-    Actinium.Cloud[func](COLLECTION, async req => {
-        await Actinium.Hook.run(hook, req);
-    });
-});
-
-// Actinium.Hook.register('route-list-query', async (qry, params, options, collection) => {});
-
-module.exports = PLUGIN;
+export default MOD();
 
 /**
   * @api {Cloud} route-save route-save

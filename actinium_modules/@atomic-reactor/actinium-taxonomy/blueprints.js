@@ -1,4 +1,4 @@
-module.exports = [
+export default [
     {
         ID: 'taxonomy-blueprint',
         description: 'Taxonomy Blueprint',

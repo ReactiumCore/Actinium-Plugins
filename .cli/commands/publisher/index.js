@@ -1,4 +1,4 @@
-const actions = require('./actions');
+import actions from './actions.js';
 
 const { _, ActionSequence, chalk, fs, op, path } = arcli;
 
@@ -152,10 +152,12 @@ const ACTION = async ({ opt, props }) => {
         .then(success => [null, success])
         .catch(error => [error]);
 
+    if (errors) console.log(errors);
+
     if (!success && errors) {
         error(X, errors);
     } else {
-        message(CHK, chalk.magenta(name), 'complete!');
+        message(CHK, chalk.magenta(NAME), 'complete!');
     }
 
     process.exit();
@@ -210,7 +212,4 @@ const COMMAND = ({ program, props }) =>
         .option(FLAGS.include.flag, FLAGS.include.desc)
         .on('--help', HELP);
 
-module.exports = {
-    COMMAND,
-    NAME,
-};
+export { COMMAND, NAME };

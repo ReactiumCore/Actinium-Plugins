@@ -1,4 +1,4 @@
-module.exports = [
+export default [
     {
         collection: 'Route',
         actions: {
