@@ -1,6 +1,13 @@
 {
+  "actinium": {
+    "version": ">5.0.0"
+  },
+  "reactium": {
+    "version": "5.0.0"
+  },
+  "type": "module",
   "name": "@atomic-reactor/actinium-syndicate",
-  "version": "1.0.7",
+  "version": "5.0.1",
   "description": "Actinium core plugin",
   "main": "index.js",
   "scripts": {
@@ -12,10 +19,7 @@
   ],
   "author": "Reactium LLC",
   "license": "MIT",
-  "reactium": {
-    "version": "3.2.6"
-  },
-  "actinium": {
-    "version": ">=3.7.0"
+  "dependencies": {
+    "jsonwebtoken": "^8.5.1"
   }
 }

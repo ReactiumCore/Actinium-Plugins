@@ -1,18 +1,19 @@
-const pkg = require('./package');
-const op = require('object-path');
+import op from 'object-path';
+import fs from 'node:fs';
 
-module.exports = {
+const pkg = JSON.parse(fs.readFileSync('package.json'));
+
+export default {
     ID: 'Taxonomy',
-    description: '',
+    description: 'Plugin for managing Content Type taxonomies.',
     name: 'Taxonomy Plugin',
     order: 100,
     bundle: [],
     meta: {
         group: 'Editing',
-        builtIn: true,
     },
     version: {
-        actinium: op.get(pkg, 'actinium.version', '>=3.2.6'),
+        actinium: op.get(pkg, 'actinium.version', '>5.0.0'),
         plugin: op.get(pkg, 'version'),
     },
 };

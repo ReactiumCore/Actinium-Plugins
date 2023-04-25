@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     SyndicateClient: {
         collection: 'SyndicateClient',
         actions: {

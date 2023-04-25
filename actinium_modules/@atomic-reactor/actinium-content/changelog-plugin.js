@@ -1,5 +1,7 @@
-const op = require('object-path');
-const pkg = require('./package');
+import fs from 'node:fs';
+import op from 'object-path';
+
+const pkg = JSON.parse(fs.readFileSync('package.json'));
 
 const PLUGIN = {
     ID: 'Changelog',
@@ -10,7 +12,7 @@ const PLUGIN = {
         builtIn: true,
     },
     version: {
-        actinium: op.get(pkg, 'actinium.version', '>=3.2.6'),
+        actinium: op.get(pkg, 'actinium.version', '>5.0.0'),
         plugin: op.get(pkg, 'version'),
     },
 };
@@ -61,9 +63,6 @@ Actinium.Collection.register(
  * @apiName changelog
  * @apiGroup Actinium
  */
-Actinium.Cloud.define(PLUGIN.ID, 'changelog', async req => {
-    return Actinium.Content.Log.list(
-        req.params,
-        Actinium.Utils.CloudRunOptions(req),
-    );
-});
+Actinium.Cloud.define(PLUGIN.ID, 'changelog', async (req) =>
+    Actinium.Content.Log.list(req.params, Actinium.Utils.CloudRunOptions(req)),
+);

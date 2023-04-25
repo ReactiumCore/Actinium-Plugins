@@ -1,4 +1,4 @@
-module.exports = [
+export default [
     {
         blueprint: 'taxonomy-blueprint',
         route: '/admin/taxonomy/:type/:slug',

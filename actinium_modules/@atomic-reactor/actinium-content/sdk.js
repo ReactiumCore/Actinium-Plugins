@@ -1,124 +1,124 @@
-const schemaTemplate = require('./schema-template');
-const slugify = require(`${ACTINIUM_DIR}/lib/utils/slugify`);
-const moment = require('moment');
-const _ = require('underscore');
-const op = require('object-path');
-const chalk = require('chalk');
-const serialize = require(`${ACTINIUM_DIR}/lib/utils/serialize`);
-const equal = require('fast-deep-equal');
-const uuidv4 = require('uuid/v4');
-const uuidv5 = require('uuid/v5');
-const ENUMS = require('./enums');
+import moment from 'moment';
+import _ from 'underscore';
+import op from 'object-path';
+import chalk from 'chalk';
+import ENUMS from './enums.js';
+import equal from 'fast-deep-equal';
+import * as uuid from 'uuid';
+import schemaTemplate from './schema-template.js';
 
-const Content = { ENUMS };
+const { uuidv4, uuidv5 } = uuid;
 
-Content.User = {};
+const MOD = async () => {
+    const { slugify, serialize } = Actinium.Utils;
 
-Content.Log = {};
+    const Content = { ENUMS };
 
-/**
- * @api {Asynchronous} Content.Log.add(params,options) Content.Log.add()
- * @apiParam {Object} params parameters for log
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiParam (params) {String} [user] Parse user object
- * @apiParam (params) {String} [userId] Parse user object id (alternative)
- * @apiParam (params) {String} contentId objectId of the content
- * @apiParam (params) {String} collection the Parse collection of the content
- * @apiParam (params) {String} changeType the type of change being logged
- * @apiParam (params) {Object} meta meta data for the change log
- * @apiName Content.Log.add
- * @apiGroup Actinium
- */
-Content.Log.add = async (params, options) => {
-    const userId = op.get(
-        params,
-        'user.id',
-        op.get(params, 'user.objectId', op.get(params, 'userId')),
-    );
-    const contentId = op.get(params, 'contentId');
-    const collection = op.get(params, 'collection');
-    const changeType = op.get(params, 'changeType');
-    const meta = op.get(params, 'meta', {});
+    Content.User = {};
 
-    if (!contentId) throw 'contentId required';
-    if (!collection) throw 'collection required';
-    if (!changeType) throw 'changeType required';
+    Content.Log = {};
 
-    if (!(changeType in ENUMS.CHANGES)) throw 'Invalid change type.';
-
-    const change = new Actinium.Object('Changelog');
-
-    change.set('contentId', contentId);
-    change.set('collection', collection);
-    change.set('userId', userId);
-    change.set('changeType', changeType);
-    change.set('meta', meta);
-
-    await change.save(null, options);
-
-    const obj = serialize(change);
-    return obj;
-};
-
-/**
- * @api {Asynchronous} Content.Log.list(params,options) Content.Log.list()
- * @apiParam {Object} params parameters for log
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiParam (params) {String} [orderBy=createdAt] Field to order the results by.
- * @apiParam (params) {String} [direction=descending] Order "descending" or "ascending"
- * @apiParam (params) {Number} [page=1] Limit page results
- * @apiParam (params) {Number} [limit=50] Limit page results
- * @apiParam (params) {String} [userId] Parse user object id (alternative)
- * @apiParam (params) {String} [contentId] objectId of the content
- * @apiParam (params) {String} [collection] the Parse collection of the content
- * @apiParam (params) {String} [changeType] the type of change being logged
- * @apiName Content.Log.list
- * @apiGroup Actinium
- */
-Content.Log.list = async (params, options) => {
-    const page = Math.max(op.get(params, 'page', 1), 1);
-    const limit = Math.min(op.get(params, 'limit', 50), 50);
-    const skip = page * limit - limit;
-
-    const orderBy = op.get(params, 'orderBy', 'updatedAt');
-    let direction = op.get(params, 'direction', 'descending');
-    const directions = ['ascending', 'descending'];
-    if (!directions.includes(direction)) direction = 'descending';
-
-    const userId = op.get(params, 'userId');
-    const collection = op.get(params, 'collection');
-    const contentId = op.get(params, 'contentId');
-    const changeType = op.get(params, 'changeType');
-
-    const qry = new Parse.Query('Changelog');
-    if (contentId) qry.equalTo('contentId', contentId);
-    if (collection) qry.equalTo('collection', collection);
-    if (changeType) qry.equalTo('changeType', changeType);
-    if (userId) qry.equalTo('userId', userId);
-
-    const count = await qry.count(options);
-
-    qry[direction](orderBy)
-        .limit(limit)
-        .skip(skip);
-
-    const pages = Math.ceil(count / limit);
-    const next = page + 1 <= pages ? page + 1 : null;
-    const prev = page - 1 > 0 && page <= pages ? page - 1 : null;
-    const results = await qry.find(options);
-
-    return {
-        count,
-        next,
-        page,
-        pages,
-        prev,
-        results: results.map(item => serialize(item)),
-    };
-};
-
-Content.initFieldSchemaTypes = async () => {
     /**
+     * @api {Asynchronous} Content.Log.add(params,options) Content.Log.add()
+     * @apiParam {Object} params parameters for log
+     * @apiParam {Object} options Parse Query options (controls access)
+     * @apiParam (params) {String} [user] Parse user object
+     * @apiParam (params) {String} [userId] Parse user object id (alternative)
+     * @apiParam (params) {String} contentId objectId of the content
+     * @apiParam (params) {String} collection the Parse collection of the content
+     * @apiParam (params) {String} changeType the type of change being logged
+     * @apiParam (params) {Object} meta meta data for the change log
+     * @apiName Content.Log.add
+     * @apiGroup Actinium
+     */
+    Content.Log.add = async (params, options) => {
+        const userId = op.get(
+            params,
+            'user.id',
+            op.get(params, 'user.objectId', op.get(params, 'userId')),
+        );
+        const contentId = op.get(params, 'contentId');
+        const collection = op.get(params, 'collection');
+        const changeType = op.get(params, 'changeType');
+        const meta = op.get(params, 'meta', {});
+
+        if (!contentId) throw 'contentId required';
+        if (!collection) throw 'collection required';
+        if (!changeType) throw 'changeType required';
+
+        if (!(changeType in ENUMS.CHANGES)) throw 'Invalid change type.';
+
+        const change = new Actinium.Object('Changelog');
+
+        change.set('contentId', contentId);
+        change.set('collection', collection);
+        change.set('userId', userId);
+        change.set('changeType', changeType);
+        change.set('meta', meta);
+
+        await change.save(null, options);
+
+        const obj = serialize(change);
+        return obj;
+    };
+
+    /**
+     * @api {Asynchronous} Content.Log.list(params,options) Content.Log.list()
+     * @apiParam {Object} params parameters for log
+     * @apiParam {Object} options Parse Query options (controls access)
+     * @apiParam (params) {String} [orderBy=createdAt] Field to order the results by.
+     * @apiParam (params) {String} [direction=descending] Order "descending" or "ascending"
+     * @apiParam (params) {Number} [page=1] Limit page results
+     * @apiParam (params) {Number} [limit=50] Limit page results
+     * @apiParam (params) {String} [userId] Parse user object id (alternative)
+     * @apiParam (params) {String} [contentId] objectId of the content
+     * @apiParam (params) {String} [collection] the Parse collection of the content
+     * @apiParam (params) {String} [changeType] the type of change being logged
+     * @apiName Content.Log.list
+     * @apiGroup Actinium
+     */
+    Content.Log.list = async (params, options) => {
+        const page = Math.max(op.get(params, 'page', 1), 1);
+        const limit = Math.min(op.get(params, 'limit', 50), 50);
+        const skip = page * limit - limit;
+
+        const orderBy = op.get(params, 'orderBy', 'updatedAt');
+        let direction = op.get(params, 'direction', 'descending');
+        const directions = ['ascending', 'descending'];
+        if (!directions.includes(direction)) direction = 'descending';
+
+        const userId = op.get(params, 'userId');
+        const collection = op.get(params, 'collection');
+        const contentId = op.get(params, 'contentId');
+        const changeType = op.get(params, 'changeType');
+
+        const qry = new Parse.Query('Changelog');
+        if (contentId) qry.equalTo('contentId', contentId);
+        if (collection) qry.equalTo('collection', collection);
+        if (changeType) qry.equalTo('changeType', changeType);
+        if (userId) qry.equalTo('userId', userId);
+
+        const count = await qry.count(options);
+
+        qry[direction](orderBy).limit(limit).skip(skip);
+
+        const pages = Math.ceil(count / limit);
+        const next = page + 1 <= pages ? page + 1 : null;
+        const prev = page - 1 > 0 && page <= pages ? page - 1 : null;
+        const results = await qry.find(options);
+
+        return {
+            count,
+            next,
+            page,
+            pages,
+            prev,
+            results: results.map((item) => serialize(item)),
+        };
+    };
+
+    Content.initFieldSchemaTypes = async () => {
+        /**
      * @api {Hook} content-schema-field-types content-schema-field-types
      * @apiDescription Hook called during content type schema creation/updates.
      Useful for defining Parse column type mapping for a given custom field type.
@@ -136,58 +136,54 @@ Actinium.Hook.register('content-schema-field-types', async fieldTypes => {
     fieldTypes['MyCustomType'] = { type: 'Object' };
 })
      */
-    await Actinium.Hook.run(
-        'content-schema-field-types',
-        schemaTemplate.fieldTypes,
-    );
-};
+        await Actinium.Hook.run(
+            'content-schema-field-types',
+            schemaTemplate.fieldTypes,
+        );
+    };
 
-Content.saveSchema = async contentTypeObj => {
-    const {
-        collection,
-        permissions,
-        schema,
-        indexes,
-    } = await Content.getSchema(contentTypeObj);
+    Content.saveSchema = async (contentTypeObj) => {
+        const { collection, permissions, schema, indexes } =
+            await Content.getSchema(contentTypeObj);
 
-    return Actinium.Collection.register(
-        collection,
-        permissions,
-        schema,
-        indexes,
-    );
-};
+        return Actinium.Collection.register(
+            collection,
+            permissions,
+            schema,
+            indexes,
+        );
+    };
 
-Content.getSchema = async contentTypeObj => {
-    const typeId = op.get(
-        contentTypeObj,
-        'objectId',
-        op.get(contentTypeObj, 'id'),
-    );
+    Content.getSchema = async (contentTypeObj) => {
+        const typeId = op.get(
+            contentTypeObj,
+            'objectId',
+            op.get(contentTypeObj, 'id'),
+        );
 
-    if (!typeId) throw new Error('Invalid content type.');
+        if (!typeId) throw new Error('Invalid content type.');
 
-    const options = { useMasterKey: true };
-    await Content.initFieldSchemaTypes();
+        const options = { useMasterKey: true };
+        await Content.initFieldSchemaTypes();
 
-    let type = new Actinium.Object('Type');
-    type.id = typeId;
-    type = await type.fetch(options);
+        let type = new Actinium.Object('Type');
+        type.id = typeId;
+        type = await type.fetch(options);
 
-    if (type) {
-        const typeObj = serialize(type);
-        const { collection, machineName, fields } = typeObj;
-        const registrationConfig = {
-            schema: {
-                ...schemaTemplate.schema,
-            },
-            permissions: {
-                ...schemaTemplate.permissions,
-            },
-            indexes: [...schemaTemplate.indexes],
-        };
+        if (type) {
+            const typeObj = serialize(type);
+            const { collection, machineName, fields } = typeObj;
+            const registrationConfig = {
+                schema: {
+                    ...schemaTemplate.schema,
+                },
+                permissions: {
+                    ...schemaTemplate.permissions,
+                },
+                indexes: [...schemaTemplate.indexes],
+            };
 
-        /**
+            /**
          * @api {Hook} content-schema content-schema
          * @apiDescription Hook called during content type schema creation/updates.
          Useful for changing default base fields/columns that will be created for one
@@ -225,99 +221,101 @@ Content.getSchema = async contentTypeObj => {
         }
     })
          */
-        await Actinium.Hook.run(
-            'content-schema',
-            registrationConfig.schema,
-            machineName,
-        );
+            await Actinium.Hook.run(
+                'content-schema',
+                registrationConfig.schema,
+                machineName,
+            );
 
-        const schema = registrationConfig.schema;
+            const schema = registrationConfig.schema;
 
-        const sample = await new Parse.Query(collection).first(options);
-        let sampleObj = {};
-        if (sample) sampleObj = serialize(sample);
+            const sample = await new Parse.Query(collection).first(options);
+            let sampleObj = {};
+            if (sample) sampleObj = serialize(sample);
 
-        const ParseSchema = new Parse.Schema(collection);
-        const allFields = Object.values(fields).map(field => {
-            field.fieldSlug = slugify(field.fieldName);
-            return field;
-        });
-        const permittedFields = _.indexBy(allFields, 'fieldSlug');
+            const ParseSchema = new Parse.Schema(collection);
+            const allFields = Object.values(fields).map((field) => {
+                field.fieldSlug = slugify(field.fieldName);
+                return field;
+            });
+            const permittedFields = _.indexBy(allFields, 'fieldSlug');
 
-        // Remove fields that have been removed from schema
-        // destructive operation
-        let existingSchema;
-        try {
-            existingSchema = await ParseSchema.get(options);
-            const requiredFields = [
-                'objectId',
-                'createdAt',
-                'updatedAt',
-                'ACL',
-            ].concat(Object.keys(schemaTemplate.schema));
+            // Remove fields that have been removed from schema
+            // destructive operation
+            let existingSchema;
+            try {
+                existingSchema = await ParseSchema.get(options);
+                const requiredFields = [
+                    'objectId',
+                    'createdAt',
+                    'updatedAt',
+                    'ACL',
+                ].concat(Object.keys(schemaTemplate.schema));
 
-            for (const name of Object.keys(existingSchema.fields)) {
-                if (requiredFields.includes(name)) continue;
-                if (!op.has(permittedFields, [name])) {
-                    schema[name] = { delete: true };
+                for (const name of Object.keys(existingSchema.fields)) {
+                    if (requiredFields.includes(name)) continue;
+                    if (!op.has(permittedFields, [name])) {
+                        schema[name] = { delete: true };
+                    }
                 }
-            }
-        } catch (error) {}
+            } catch (error) {}
 
-        for (const { fieldType, fieldSlug } of allFields) {
-            // skip if already defined above (for deletion)
-            if (fieldSlug in schema) continue;
+            for (const { fieldType, fieldSlug } of allFields) {
+                // skip if already defined above (for deletion)
+                if (fieldSlug in schema) continue;
 
-            // Parse fieldType is known to Actinium (plugins implement 'content-schema-field-types' hook)
-            if (fieldType in schemaTemplate.fieldTypes) {
-                const allExistingFieldSchemas = (existingSchema || {}).fields;
-                const existingFieldSchema = op.get(
-                    Object.assign({}, allExistingFieldSchemas || {}),
-                    [fieldSlug],
-                    {},
-                );
-
-                const {
-                    type: existingType,
-                    targetClass: existingTargetClass,
-                } = existingFieldSchema;
-                let {
-                    type: proposedType,
-                    targetClass: proposedTargetClass,
-                } = schemaTemplate.fieldTypes[fieldType];
-
-                // allow field schema set/update if any of these are true
-                const fieldCheck = {
-                    // 1. no content yet saved to this content type (create/update)
-                    noContent: !sample,
-
-                    // 2. this column doesn't appear to exist yet
-                    noDataInField: !(fieldSlug in sampleObj),
-
-                    // 3. the field schema is unchanged
-                    fieldSchemaUnchanged:
-                        proposedType === existingType &&
-                        proposedTargetClass === existingTargetClass,
-                };
-
-                if (
-                    fieldCheck.noContent ||
-                    fieldCheck.noDataInField ||
-                    fieldCheck.fieldSchemaUnchanged
-                ) {
-                    schema[fieldSlug] = schemaTemplate.fieldTypes[fieldType];
-                } else {
-                    WARN(
-                        chalk.cyan('Warning:'),
-                        `Cannot change field type schema on existing field ${fieldSlug} for content type ${machineName}.`,
+                // Parse fieldType is known to Actinium (plugins implement 'content-schema-field-types' hook)
+                if (fieldType in schemaTemplate.fieldTypes) {
+                    const allExistingFieldSchemas = (existingSchema || {})
+                        .fields;
+                    const existingFieldSchema = op.get(
+                        Object.assign({}, allExistingFieldSchemas || {}),
+                        [fieldSlug],
+                        {},
                     );
-                    if (existingFieldSchema)
-                        schema[fieldSlug] = existingFieldSchema;
+
+                    const {
+                        type: existingType,
+                        targetClass: existingTargetClass,
+                    } = existingFieldSchema;
+                    let {
+                        type: proposedType,
+                        targetClass: proposedTargetClass,
+                    } = schemaTemplate.fieldTypes[fieldType];
+
+                    // allow field schema set/update if any of these are true
+                    const fieldCheck = {
+                        // 1. no content yet saved to this content type (create/update)
+                        noContent: !sample,
+
+                        // 2. this column doesn't appear to exist yet
+                        noDataInField: !(fieldSlug in sampleObj),
+
+                        // 3. the field schema is unchanged
+                        fieldSchemaUnchanged:
+                            proposedType === existingType &&
+                            proposedTargetClass === existingTargetClass,
+                    };
+
+                    if (
+                        fieldCheck.noContent ||
+                        fieldCheck.noDataInField ||
+                        fieldCheck.fieldSchemaUnchanged
+                    ) {
+                        schema[fieldSlug] =
+                            schemaTemplate.fieldTypes[fieldType];
+                    } else {
+                        WARN(
+                            chalk.cyan('Warning:'),
+                            `Cannot change field type schema on existing field ${fieldSlug} for content type ${machineName}.`,
+                        );
+                        if (existingFieldSchema)
+                            schema[fieldSlug] = existingFieldSchema;
+                    }
                 }
             }
-        }
 
-        /**
+            /**
          * @api {Hook} content-schema-permissions content-schema-permissions
          * @apiDescription Hook called during content type schema creation/updates.
          Useful for changing default permissions used during `Actinium.Collection.register()` for
@@ -343,13 +341,13 @@ Actinium.Hook.register('content-schema-permissions', async (permissions, machine
     }
 })
          */
-        await Actinium.Hook.run(
-            'content-schema-permissions',
-            registrationConfig.permissions,
-            machineName,
-        );
+            await Actinium.Hook.run(
+                'content-schema-permissions',
+                registrationConfig.permissions,
+                machineName,
+            );
 
-        /**
+            /**
      * @api {Hook} content-schema-indexes content-schema-indexes
      * @apiDescription Hook called during content type schema creation/updates.
      Useful for changing/adding which database indexes will be created by
@@ -366,22 +364,22 @@ Actinium.Hook.register('content-schema-indexes', async (indexes, machineName) =>
     }
 })
      */
-        await Actinium.Hook.run(
-            'content-schema-indexes',
-            registrationConfig.indexes,
-            machineName,
-        );
+            await Actinium.Hook.run(
+                'content-schema-indexes',
+                registrationConfig.indexes,
+                machineName,
+            );
 
-        return {
-            collection,
-            ...registrationConfig,
-            existingSchema,
-            permittedFields,
-        };
-    }
-};
+            return {
+                collection,
+                ...registrationConfig,
+                existingSchema,
+                permittedFields,
+            };
+        }
+    };
 
-/**
+    /**
  * @api {Asynchronous} Content.sanitize(content) Content.sanitize()
  * @apiDescription Based on content provided, will return array of sanitized content fields
  based on the field types in the content type. (Array of `{fieldSlug, fieldValue}`)
@@ -391,33 +389,35 @@ Actinium.Hook.register('content-schema-indexes', async (indexes, machineName) =>
  * @apiName Content.sanitize
  * @apiGroup Actinium
  */
-Content.sanitize = async (params, object) => {
-    const { type } = params;
+    Content.sanitize = async (params, object) => {
+        const { type } = params;
 
-    const { existingSchema, permittedFields } = await Content.getSchema(type);
-    const fieldConfigs = permittedFields;
+        const { existingSchema, permittedFields } = await Content.getSchema(
+            type,
+        );
+        const fieldConfigs = permittedFields;
 
-    const fieldData = _.indexBy(
-        Object.entries(params)
-            .map(([fieldName, fieldValue]) => ({
-                fieldSlug: slugify(fieldName),
-                fieldValue,
-            }))
+        const fieldData = _.indexBy(
+            Object.entries(params)
+                .map(([fieldName, fieldValue]) => ({
+                    fieldSlug: slugify(fieldName),
+                    fieldValue,
+                }))
 
-            // only custom fields in schema
-            .filter(({ fieldSlug }) => {
-                return (
-                    fieldSlug in permittedFields &&
-                    fieldSlug in op.get(existingSchema, 'fields', {})
-                );
-            }),
-        'fieldSlug',
-    );
+                // only custom fields in schema
+                .filter(({ fieldSlug }) => {
+                    return (
+                        fieldSlug in permittedFields &&
+                        fieldSlug in op.get(existingSchema, 'fields', {})
+                    );
+                }),
+            'fieldSlug',
+        );
 
-    for (const [fieldSlug, field] of Object.entries(fieldData)) {
-        const fieldConfig = fieldConfigs[fieldSlug];
+        for (const [fieldSlug, field] of Object.entries(fieldData)) {
+            const fieldConfig = fieldConfigs[fieldSlug];
 
-        /**
+            /**
          * @api {Hook} content-field-sanitize content-field-sanitize
          * @apiDescription Triggered during `Content.sanitize()` (content creation / updates).
          Used to sanitize data into sane fieldSlug=>fieldValue key pairs, which
@@ -436,26 +436,29 @@ Content.sanitize = async (params, object) => {
          * @apiName content-field-sanitize
          * @apiGroup Hooks
          */
-        await Actinium.Hook.run('content-field-sanitize', {
-            field,
-            fieldConfig,
-            fieldData,
-            params,
-            fieldSchema: op.get(existingSchema, ['fields', field.fieldSlug]),
-            fullSchema: existingSchema, // full schema
-            permittedFields,
-            object,
-        });
-    }
+            await Actinium.Hook.run('content-field-sanitize', {
+                field,
+                fieldConfig,
+                fieldData,
+                params,
+                fieldSchema: op.get(existingSchema, [
+                    'fields',
+                    field.fieldSlug,
+                ]),
+                fullSchema: existingSchema, // full schema
+                permittedFields,
+                object,
+            });
+        }
 
-    if (op.has(params, 'meta') && typeof params.meta === 'object') {
-        object.set('meta', params.meta);
-    }
+        if (op.has(params, 'meta') && typeof params.meta === 'object') {
+            object.set('meta', params.meta);
+        }
 
-    return Object.values(fieldData);
-};
+        return Object.values(fieldData);
+    };
 
-/**
+    /**
  * @api {Asynchronous} Content.createBranch(content,type,branch,options) Content.createBranch()
  * @apiDescription Create a new revision branch based on the current revision of some content.
  Returns new branches and fresh history objects.
@@ -466,76 +469,76 @@ Content.sanitize = async (params, object) => {
  * @apiName Content.createBranch
  * @apiGroup Actinium
  */
-Content.createBranch = async (
-    content,
-    type,
-    branch,
-    branchLabel = 'Master',
-    options,
-) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    content = serialize(content);
-    type = serialize(type);
+    Content.createBranch = async (
+        content,
+        type,
+        branch,
+        branchLabel = 'Master',
+        options,
+    ) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        content = serialize(content);
+        type = serialize(type);
 
-    if (!branch || op.has(content, ['branches', branch])) branch = uuidv4();
-    if (!branchLabel && branch !== 'master') branchLabel = 'Unlabeled';
+        if (!branch || op.has(content, ['branches', branch])) branch = uuidv4();
+        if (!branchLabel && branch !== 'master') branchLabel = 'Unlabeled';
 
-    const branches = op.get(content, 'branches', {});
-    op.set(branches, [branch, 'label'], branchLabel);
-    op.set(branches, [branch, 'history'], []);
+        const branches = op.get(content, 'branches', {});
+        op.set(branches, [branch, 'label'], branchLabel);
+        op.set(branches, [branch, 'history'], []);
 
-    const currentBranchId = op.get(content, 'history.branch');
-    const currentRevisionIndex = op.get(content, 'history.revision');
+        const currentBranchId = op.get(content, 'history.branch');
+        const currentRevisionIndex = op.get(content, 'history.revision');
 
-    const user = await Actinium.Utils.UserFromSession(
-        op.get(options, 'sessionToken'),
-    );
-
-    // get current revision id in case we tagging existing base revision
-    let revisionId = op.get(content, [
-        'branches',
-        currentBranchId,
-        'history',
-        currentRevisionIndex,
-    ]);
-
-    // need to create new base revision for this branch
-    if (currentRevisionIndex !== 0) {
-        const revObj = {
-            collection: op.get(type, 'collection'),
-            object: serialize(content),
-        };
-
-        const revision = await Actinium.Recycle.revision(revObj, options);
-        revisionId = revision.id;
-    }
-
-    op.set(branches, [branch, 'history'], [revisionId]);
-    const history = { branch, revision: 0 };
-
-    if (op.get(content, 'objectId')) {
-        await Actinium.Content.Log.add(
-            {
-                contentId: op.get(content, 'objectId'),
-                collection: op.get(type, 'collection'),
-                userId: op.get(user, 'id'),
-                changeType: ENUMS.CHANGES.CREATED_BRANCH,
-                meta: {
-                    uuid: op.get(content, 'uuid'),
-                    slug: op.get(content, 'slug'),
-                    type: op.get(type, 'type'),
-                    branch: op.get(branches, op.get(history, 'branch'), {}),
-                    history,
-                },
-            },
-            masterOptions,
+        const user = await Actinium.Utils.UserFromSession(
+            op.get(options, 'sessionToken'),
         );
-    }
 
-    return { branches, history };
-};
+        // get current revision id in case we tagging existing base revision
+        let revisionId = op.get(content, [
+            'branches',
+            currentBranchId,
+            'history',
+            currentRevisionIndex,
+        ]);
 
-/**
+        // need to create new base revision for this branch
+        if (currentRevisionIndex !== 0) {
+            const revObj = {
+                collection: op.get(type, 'collection'),
+                object: serialize(content),
+            };
+
+            const revision = await Actinium.Recycle.revision(revObj, options);
+            revisionId = revision.id;
+        }
+
+        op.set(branches, [branch, 'history'], [revisionId]);
+        const history = { branch, revision: 0 };
+
+        if (op.get(content, 'objectId')) {
+            await Actinium.Content.Log.add(
+                {
+                    contentId: op.get(content, 'objectId'),
+                    collection: op.get(type, 'collection'),
+                    userId: op.get(user, 'id'),
+                    changeType: ENUMS.CHANGES.CREATED_BRANCH,
+                    meta: {
+                        uuid: op.get(content, 'uuid'),
+                        slug: op.get(content, 'slug'),
+                        type: op.get(type, 'type'),
+                        branch: op.get(branches, op.get(history, 'branch'), {}),
+                        history,
+                    },
+                },
+                masterOptions,
+            );
+        }
+
+        return { branches, history };
+    };
+
+    /**
  * @api {Asynchronous} Content.labelBranch(params,options) Content.labelBranch()
  * @apiDescription Clone a branch / specific region as a new branch.
  * @apiParam {Object} params parameters for content
@@ -555,67 +558,70 @@ Content.createBranch = async (
  * @apiName Content.labelBranch
  * @apiGroup Actinium
  */
-Content.labelBranch = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(params, options);
-    if (!contentObj) throw 'Unable to find content';
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
+    Content.labelBranch = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(params, options);
+        if (!contentObj) throw 'Unable to find content';
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
 
-    const branches = op.get(contentObj, 'branches');
-    const branchLabel = op.get(params, 'branchLabel');
-    const branch = op.get(contentObj, 'history.branch');
+        const branches = op.get(contentObj, 'branches');
+        const branchLabel = op.get(params, 'branchLabel');
+        const branch = op.get(contentObj, 'history.branch');
 
-    if (!branchLabel) throw 'branchLabel required';
-    op.set(branches, [branch, 'label'], branchLabel);
+        if (!branchLabel) throw 'branchLabel required';
+        op.set(branches, [branch, 'label'], branchLabel);
 
-    const content = new Actinium.Object(op.get(typeObj, 'collection'));
-    content.id = contentObj.objectId;
-    content.set('branches', branches);
+        const content = new Actinium.Object(op.get(typeObj, 'collection'));
+        content.id = contentObj.objectId;
+        content.set('branches', branches);
 
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
 
-    await content.save(null, options);
+        await content.save(null, options);
 
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
 
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection: typeObj.collection,
-            userId,
-            changeType: ENUMS.CHANGES.LABELED_BRANCH,
-            meta: {
-                uuid: op.get(contentObj, 'uuid'),
-                slug: op.get(contentObj, 'slug'),
-                type: op.get(typeObj, 'type'),
-                branchLabel,
-                branch: op.get(branches, branch),
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection: typeObj.collection,
+                userId,
+                changeType: ENUMS.CHANGES.LABELED_BRANCH,
+                meta: {
+                    uuid: op.get(contentObj, 'uuid'),
+                    slug: op.get(contentObj, 'slug'),
+                    type: op.get(typeObj, 'type'),
+                    branchLabel,
+                    branch: op.get(branches, branch),
+                },
             },
-        },
-        masterOptions,
-    );
+            masterOptions,
+        );
 
-    await Actinium.Hook.run(
-        'content-branch-label',
-        contentObj,
-        typeObj,
-        params,
-    );
-    return contentObj;
-};
+        await Actinium.Hook.run(
+            'content-branch-label',
+            contentObj,
+            typeObj,
+            params,
+        );
+        return contentObj;
+    };
 
-/**
+    /**
  * @api {Asynchronous} Content.deleteBranch(params,options) Content.deleteBranch()
  * @apiDescription Delete a branch and mark its revisions for deletion.
  * @apiParam {Object} params parameters for content
@@ -634,93 +640,99 @@ Content.labelBranch = async (params, options) => {
  * @apiName Content.deleteBranch
  * @apiGroup Actinium
  */
-Content.deleteBranch = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(params, options);
-    if (!contentObj) throw 'Unable to find content';
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
+    Content.deleteBranch = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(params, options);
+        if (!contentObj) throw 'Unable to find content';
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
 
-    const branches = op.get(contentObj, 'branches');
-    const originalBranches = { ...branches };
-    const branch = op.get(contentObj, 'history.branch');
-    if (branch === 'master') throw 'master branch cannot be deleted';
+        const branches = op.get(contentObj, 'branches');
+        const originalBranches = { ...branches };
+        const branch = op.get(contentObj, 'history.branch');
+        if (branch === 'master') throw 'master branch cannot be deleted';
 
-    // all revisions in other branches
-    const otherRevs = _.chain(
-        Object.entries(branches)
-            .map(([id, value]) => ({ ...value, id }))
-            .filter(({ id }) => id !== branch),
-    )
-        .pluck('history')
-        .flatten()
-        .uniq()
-        .value();
+        // all revisions in other branches
+        const otherRevs = _.chain(
+            Object.entries(branches)
+                .map(([id, value]) => ({ ...value, id }))
+                .filter(({ id }) => id !== branch),
+        )
+            .pluck('history')
+            .flatten()
+            .uniq()
+            .value();
 
-    // all revisions not in use by another branch
-    const revs = op
-        .get(branches, [branch, 'history'], [])
-        .filter(rev => !otherRevs.includes(rev));
+        // all revisions not in use by another branch
+        const revs = op
+            .get(branches, [branch, 'history'], [])
+            .filter((rev) => !otherRevs.includes(rev));
 
-    const content = new Actinium.Object(op.get(typeObj, 'collection'));
-    content.id = contentObj.objectId;
-    op.del(branches, [branch]);
-    content.set('branches', branches);
+        const content = new Actinium.Object(op.get(typeObj, 'collection'));
+        content.id = contentObj.objectId;
+        op.del(branches, [branch]);
+        content.set('branches', branches);
 
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
 
-    await content.save(null, options);
+        await content.save(null, options);
 
-    const revisions = revs.map(objectId => {
-        const rev = new Actinium.Object('Recycle');
-        rev.id = objectId;
-        rev.set('type', 'trash');
-        return rev;
-    });
+        const revisions = revs.map((objectId) => {
+            const rev = new Actinium.Object('Recycle');
+            rev.id = objectId;
+            rev.set('type', 'trash');
+            return rev;
+        });
 
-    const trashedRevs = await Actinium.Object.saveAll(revisions, masterOptions);
+        const trashedRevs = await Actinium.Object.saveAll(
+            revisions,
+            masterOptions,
+        );
 
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
 
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection: typeObj.collection,
-            userId,
-            changeType: ENUMS.CHANGES.DELETED_BRANCH,
-            meta: {
-                uuid: op.get(contentObj, 'uuid'),
-                slug: op.get(contentObj, 'slug'),
-                type: op.get(typeObj, 'type'),
-                branch: op.get(originalBranches, branch, {}),
-                trashedRevs,
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection: typeObj.collection,
+                userId,
+                changeType: ENUMS.CHANGES.DELETED_BRANCH,
+                meta: {
+                    uuid: op.get(contentObj, 'uuid'),
+                    slug: op.get(contentObj, 'slug'),
+                    type: op.get(typeObj, 'type'),
+                    branch: op.get(originalBranches, branch, {}),
+                    trashedRevs,
+                },
             },
-        },
-        masterOptions,
-    );
+            masterOptions,
+        );
 
-    await Actinium.Hook.run(
-        'content-branch-deleted',
-        contentObj,
-        typeObj,
-        params,
-        trashedRevs,
-    );
+        await Actinium.Hook.run(
+            'content-branch-deleted',
+            contentObj,
+            typeObj,
+            params,
+            trashedRevs,
+        );
 
-    return contentObj;
-};
+        return contentObj;
+    };
 
-/**
+    /**
  * @api {Asynchronous} Content.cloneBranch(params,options) Content.cloneBranch()
  * @apiDescription Clone a branch / specific revision as a new branch.
  * @apiParam {Object} params parameters for content
@@ -740,95 +752,98 @@ Content.deleteBranch = async (params, options) => {
  * @apiName Content.cloneBranch
  * @apiGroup Actinium
  */
-Content.cloneBranch = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const branchLabel = op.get(params, 'branchLabel');
-    if (!branchLabel) throw 'branchLabel required';
+    Content.cloneBranch = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const branchLabel = op.get(params, 'branchLabel');
+        if (!branchLabel) throw 'branchLabel required';
 
-    const contentObj = await Actinium.Content.retrieve(params, options);
+        const contentObj = await Actinium.Content.retrieve(params, options);
 
-    let newBranchId = op.get(params, 'newBranchId', null);
-    if (newBranchId in op.get(contentObj, 'branches', {}))
-        newBranchId = uuidv4();
+        let newBranchId = op.get(params, 'newBranchId', null);
+        if (newBranchId in op.get(contentObj, 'branches', {}))
+            newBranchId = uuidv4();
 
-    if (!contentObj) throw 'Unable to find content';
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
+        if (!contentObj) throw 'Unable to find content';
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
 
-    const { branches, history } = await Content.createBranch(
-        contentObj,
-        typeObj,
-        newBranchId,
-        branchLabel,
-        options,
-    );
+        const { branches, history } = await Content.createBranch(
+            contentObj,
+            typeObj,
+            newBranchId,
+            branchLabel,
+            options,
+        );
 
-    const content = new Actinium.Object(op.get(typeObj, 'collection'));
-    content.id = contentObj.objectId;
-    content.set('branches', branches);
+        const content = new Actinium.Object(op.get(typeObj, 'collection'));
+        content.id = contentObj.objectId;
+        content.set('branches', branches);
 
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
 
-    await content.save(null, options);
+        await content.save(null, options);
 
-    op.set(contentObj, 'branches', branches);
-    op.set(contentObj, 'history', history);
+        op.set(contentObj, 'branches', branches);
+        op.set(contentObj, 'history', history);
 
-    await Actinium.Hook.run(
-        'content-clone-branch',
-        contentObj,
-        typeObj,
-        params,
-    );
+        await Actinium.Hook.run(
+            'content-clone-branch',
+            contentObj,
+            typeObj,
+            params,
+        );
 
-    return contentObj;
-};
+        return contentObj;
+    };
 
-/**
- * @api {Asynchronous} Content.diff(content,changes) Content.diff()
- * @apiDescription Compares content object to proposed changes, and returns difference.
- * @apiParam {Object} content your content object
- * @apiParam {Object} changes proposed changes to the content
- * @apiName Content.diff
- * @apiGroup Actinium
- */
-Content.diff = async (contentObj, changes) => {
-    const diff = {};
+    /**
+     * @api {Asynchronous} Content.diff(content,changes) Content.diff()
+     * @apiDescription Compares content object to proposed changes, and returns difference.
+     * @apiParam {Object} content your content object
+     * @apiParam {Object} changes proposed changes to the content
+     * @apiName Content.diff
+     * @apiGroup Actinium
+     */
+    Content.diff = async (contentObj, changes) => {
+        const diff = {};
 
-    for (const { fieldSlug, fieldValue } of changes) {
-        if (!equal(op.get(contentObj, fieldSlug), fieldValue)) {
-            op.set(diff, fieldSlug, fieldValue);
+        for (const { fieldSlug, fieldValue } of changes) {
+            if (!equal(op.get(contentObj, fieldSlug), fieldValue)) {
+                op.set(diff, fieldSlug, fieldValue);
+            }
         }
-    }
 
-    const title = op.get(changes, 'title');
-    if (title && op.get(contentObj, 'title') !== title) {
-        op.set(diff, 'title', title);
-    }
+        const title = op.get(changes, 'title');
+        if (title && op.get(contentObj, 'title') !== title) {
+            op.set(diff, 'title', title);
+        }
 
-    // No changes
-    if (Object.keys(diff).length < 1) return false;
+        // No changes
+        if (Object.keys(diff).length < 1) return false;
 
-    // Stuff from top-level content object
-    op.set(diff, 'objectId', contentObj.objectId);
-    op.set(diff, 'history', contentObj.history);
-    op.set(diff, 'branches', contentObj.branches);
+        // Stuff from top-level content object
+        op.set(diff, 'objectId', contentObj.objectId);
+        op.set(diff, 'history', contentObj.history);
+        op.set(diff, 'branches', contentObj.branches);
 
-    // Remove these things to cut down noise in diff
-    op.del(diff, 'status');
-    op.del(diff, 'slug');
-    op.del(diff, 'uuid');
+        // Remove these things to cut down noise in diff
+        op.del(diff, 'status');
+        op.del(diff, 'slug');
+        op.del(diff, 'uuid');
 
-    return diff;
-};
+        return diff;
+    };
 
-/**
+    /**
  * @api {Asynchronous} Content.revision(params,options) Content.revision()
  * @apiDescription Retrieve branch history of some content.
  * @apiParam {Object} params parameters for content
@@ -847,132 +862,143 @@ Content.diff = async (contentObj, changes) => {
  * @apiName Content.revision
  * @apiGroup Actinium
  */
-Content.revisions = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(params, options);
-    if (!contentObj) throw 'Unable to find content';
+    Content.revisions = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(params, options);
+        if (!contentObj) throw 'Unable to find content';
 
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
 
-    const branch = op.get(contentObj, 'history.branch');
-    const history = op.get(contentObj, ['branches', branch, 'history'], []);
+        const branch = op.get(contentObj, 'history.branch');
+        const history = op.get(contentObj, ['branches', branch, 'history'], []);
 
-    const revisions = await Actinium.Object.fetchAll(
-        history.map(id => {
-            const rev = new Actinium.Object('Recycle');
-            rev.id = id;
-            return rev;
-        }),
-        masterOptions,
-    );
+        const revisions = await Actinium.Object.fetchAll(
+            history.map((id) => {
+                const rev = new Actinium.Object('Recycle');
+                rev.id = id;
+                return rev;
+            }),
+            masterOptions,
+        );
 
-    const byRevId = _.indexBy(
-        revisions.map(rev => serialize(rev)),
-        'objectId',
-    );
-    const baseId = history[0];
-    const base = op.get(byRevId, [baseId, 'object'], {});
+        const byRevId = _.indexBy(
+            revisions.map((rev) => serialize(rev)),
+            'objectId',
+        );
+        const baseId = history[0];
+        const base = op.get(byRevId, [baseId, 'object'], {});
 
-    const revObjs = Object.values(byRevId).map(rev => {
-        const changes = {
-            ...op.get(rev, 'object', {}),
+        const revObjs = Object.values(byRevId).map((rev) => {
+            const changes = {
+                ...op.get(rev, 'object', {}),
+            };
+            const revId = op.get(rev, 'objectId');
+
+            op.del(changes, 'objectId');
+            op.del(changes, 'slug');
+            op.del(changes, 'type');
+            op.del(changes, 'user');
+            op.del(changes, 'title');
+            op.del(changes, 'uuid');
+            op.del(changes, 'ACL');
+            op.del(changes, 'status');
+            op.del(changes, 'history');
+            op.del(changes, 'branches');
+            op.del(changes, 'createdAt');
+            op.del(changes, 'updatedAt');
+
+            return {
+                revId,
+                changes,
+                createdAt: op.get(rev, 'createdAt'),
+                updatedAt: op.get(rev, 'updatedAt'),
+            };
+        });
+
+        const response = {
+            base: { ...base, revId: baseId },
+            revisions: revObjs,
+            branch,
         };
-        const revId = op.get(rev, 'objectId');
 
-        op.del(changes, 'objectId');
-        op.del(changes, 'slug');
-        op.del(changes, 'type');
-        op.del(changes, 'user');
-        op.del(changes, 'title');
-        op.del(changes, 'uuid');
-        op.del(changes, 'ACL');
-        op.del(changes, 'status');
-        op.del(changes, 'history');
-        op.del(changes, 'branches');
-        op.del(changes, 'createdAt');
-        op.del(changes, 'updatedAt');
+        await Actinium.Hook.run(
+            'content-revisions',
+            response,
+            contentObj,
+            typeObj,
+        );
 
-        return {
-            revId,
-            changes,
-            createdAt: op.get(rev, 'createdAt'),
-            updatedAt: op.get(rev, 'updatedAt'),
-        };
-    });
-
-    const response = {
-        base: { ...base, revId: baseId },
-        revisions: revObjs,
-        branch,
+        return response;
     };
 
-    await Actinium.Hook.run('content-revisions', response, contentObj, typeObj);
+    /**
+     * @api {Asynchronous} Content.getVersion(content,branch,revision,options) Content.getVersion()
+     * @apiDescription Given a content object, fetch a specific revision of that content.
+     * @apiParam {Object} content your content object
+     * @apiParam {String} [branch=master] the revision branch of current content
+     * @apiParam {Number} [revision] index in branch history to retrieve (default latest)
+     * @apiParam {Object} options Parse Query options (controls access)
+     * @apiName Content.getVersion
+     * @apiGroup Actinium
+     */
+    Content.getVersion = async (contentObj, branch, revisionIndex, options) => {
+        if (!op.has(contentObj, ['branches', branch]))
+            throw 'No such branch in history';
 
-    return response;
-};
+        const history = op.get(contentObj, ['branches', branch, 'history'], []);
 
-/**
- * @api {Asynchronous} Content.getVersion(content,branch,revision,options) Content.getVersion()
- * @apiDescription Given a content object, fetch a specific revision of that content.
- * @apiParam {Object} content your content object
- * @apiParam {String} [branch=master] the revision branch of current content
- * @apiParam {Number} [revision] index in branch history to retrieve (default latest)
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiName Content.getVersion
- * @apiGroup Actinium
- */
-Content.getVersion = async (contentObj, branch, revisionIndex, options) => {
-    if (!op.has(contentObj, ['branches', branch]))
-        throw 'No such branch in history';
+        const range = [0];
+        if (
+            typeof revisionIndex !== 'undefined' &&
+            revisionIndex < history.length
+        )
+            range.push(revisionIndex + 1);
+        if (!history.length) throw 'No revision history in branch';
 
-    const history = op.get(contentObj, ['branches', branch, 'history'], []);
+        const revisionIds = history.slice(...range);
 
-    const range = [0];
-    if (typeof revisionIndex !== 'undefined' && revisionIndex < history.length)
-        range.push(revisionIndex + 1);
-    if (!history.length) throw 'No revision history in branch';
+        const revisions = await Actinium.Object.fetchAll(
+            revisionIds.map((id) => {
+                const rev = new Actinium.Object('Recycle');
+                rev.id = id;
+                return rev;
+            }),
+            options,
+        );
 
-    const revisionIds = history.slice(...range);
+        const revsById = _.indexBy(revisions, 'id');
+        let version = { ...contentObj };
+        revisionIds.forEach((id) => {
+            const rev = serialize(op.get(revsById, [id]));
+            version = {
+                ...version,
+                ...op.get(rev, 'object', {}),
+            };
+        });
 
-    const revisions = await Actinium.Object.fetchAll(
-        revisionIds.map(id => {
-            const rev = new Actinium.Object('Recycle');
-            rev.id = id;
-            return rev;
-        }),
-        options,
-    );
-
-    const revsById = _.indexBy(revisions, 'id');
-    let version = { ...contentObj };
-    revisionIds.forEach(id => {
-        const rev = serialize(op.get(revsById, [id]));
-        version = {
-            ...version,
-            ...op.get(rev, 'object', {}),
+        // Things that are always references to top-level record
+        // regardless of revision selected
+        version.objectId = contentObj.objectId;
+        version.title = contentObj.title;
+        version.slug = contentObj.slug;
+        version.status = contentObj.status;
+        version.uuid = contentObj.uuid;
+        version.branches = contentObj.branches;
+        version.history = {
+            branch,
+            revision: revisionIds.length - 1,
         };
-    });
+        version.publish = contentObj.publish;
+        version.createdAt = contentObj.createdAt;
+        version.updatedAt = contentObj.updatedAt;
 
-    // Things that are always references to top-level record
-    // regardless of revision selected
-    version.objectId = contentObj.objectId;
-    version.title = contentObj.title;
-    version.slug = contentObj.slug;
-    version.status = contentObj.status;
-    version.uuid = contentObj.uuid;
-    version.branches = contentObj.branches;
-    version.history = {
-        branch,
-        revision: revisionIds.length - 1,
+        return version;
     };
-    version.publish = contentObj.publish;
-    version.createdAt = contentObj.createdAt;
-    version.updatedAt = contentObj.updatedAt;
 
-    return version;
-};
-
-/**
+    /**
  * @api {Asynchronous} Content.list(params,options) Content.list()
  * @apiDescription Get list of content of a specific Type.
  * @apiParam {Object} params parameters for content
@@ -1019,275 +1045,282 @@ Actinium.Content.list({
     "status": "!TRASH"
 });
  */
-Content.list = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-    const collection = typeObj.collection;
-
-    let page = Math.max(op.get(params, 'page', 1), 1);
-    let limit = Math.min(op.get(params, 'limit', 20), 1000);
-    const optimize = op.get(params, 'optimize', false) === true;
-    const refresh = op.get(params, 'refresh', false) === true;
-    const { ids = [], uuids = [], slugs = [] } = [
-        'ids',
-        'uuids',
-        'slugs',
-    ].reduce((idParams, t) => {
-        op.set(
-            idParams,
-            [t],
-            _.flatten([op.get(params, [t])]).filter(
-                id => typeof id === 'string' && id.length > 0,
-            ),
+    Content.list = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
         );
-        return idParams;
-    }, {});
+        const collection = typeObj.collection;
 
-    const resolveRelations = op.get(params, 'resolveRelations', false) === true;
-    const indexBy = op.get(params, 'indexBy');
-    const orderBy = op.get(params, 'orderBy', 'updatedAt');
-    const orders = ['ascending', 'descending'];
-    let order = op.get(
-        params,
-        'order',
-        op.get(params, 'direction', 'descending'),
-    );
-    order = !orders.includes(order) ? 'descending' : order;
+        let page = Math.max(op.get(params, 'page', 1), 1);
+        let limit = Math.min(op.get(params, 'limit', 20), 1000);
+        const optimize = op.get(params, 'optimize', false) === true;
+        const refresh = op.get(params, 'refresh', false) === true;
+        const {
+            ids = [],
+            uuids = [],
+            slugs = [],
+        } = ['ids', 'uuids', 'slugs'].reduce((idParams, t) => {
+            op.set(
+                idParams,
+                [t],
+                _.flatten([op.get(params, [t])]).filter(
+                    (id) => typeof id === 'string' && id.length > 0,
+                ),
+            );
+            return idParams;
+        }, {});
 
-    const qry = new Parse.Query(collection);
-    let status = op.get(params, 'status', ENUMS.STATUS.PUBLISHED);
+        const resolveRelations =
+            op.get(params, 'resolveRelations', false) === true;
+        const indexBy = op.get(params, 'indexBy');
+        const orderBy = op.get(params, 'orderBy', 'updatedAt');
+        const orders = ['ascending', 'descending'];
+        let order = op.get(
+            params,
+            'order',
+            op.get(params, 'direction', 'descending'),
+        );
+        order = !orders.includes(order) ? 'descending' : order;
 
-    if (String(status).substr(0, 1) !== '!') {
-        qry.equalTo('status', status);
-    } else {
-        qry.notEqualTo('status', String(status).substr(1));
-    }
+        const qry = new Parse.Query(collection);
+        let status = op.get(params, 'status', ENUMS.STATUS.PUBLISHED);
 
-    // get list from id list params if found
-    if (ids.length > 0) {
-        qry.containedIn('objectId', ids);
-    } else if (uuids.length > 0) {
-        qry.containedIn('uuid', uuids);
-    } else if (slugs.length > 0) {
-        qry.containedIn('slug', slugs);
-    }
-
-    const title = op.get(params, 'title');
-    if (title) {
-        const reg = new RegExp(title, 'gi');
-        qry.matches('title', reg);
-    }
-
-    /**
-     * @api {Hook} content-query-count content-query-count
-     * @apiDescription Called before a content query count has taken place via Content.list() function.
-     * @apiParam {Object} query Actinium Query object
-     * @apiParam {Object} params The request.params object
-     * @apiParam {Object} options The request options object
-     * @apiName content-query-count
-     * @apiGroup Hooks
-     */
-    await Actinium.Hook.run('content-query-count', qry, params, options);
-
-    const count = await qry.count(options);
-    if (optimize && count <= 1000) {
-        page = 1;
-        limit = 1000;
-    }
-
-    const cacheKey = [
-        `content-${collection}`,
-        _.compact([
-            limit,
-            page,
-            order,
-            orderBy,
-            status,
-            resolveRelations ? 'resolve' : 'dontresolve',
-            count,
-        ]).join('_'),
-    ];
-
-    let response = Actinium.Cache.get(cacheKey);
-    if (response && !refresh) return response;
-
-    const { schema } = await Actinium.Content.getSchema(typeObj);
-    const skip = page * limit - limit;
-
-    // Resolve Relations
-    const pointers = Object.entries(schema).filter(
-        ([, fs]) =>
-            op.get(fs, 'type') === 'Pointer' &&
-            op.get(fs, 'targetClass') !== '_User',
-    );
-    const relations = Object.entries(schema).filter(
-        ([, fs]) =>
-            op.get(fs, 'type') === 'Relation' &&
-            op.get(fs, 'targetClass') !== '_User',
-    );
-
-    // Attach Relations
-    if (resolveRelations) {
-        for (const [fieldSlug] of pointers) {
-            qry.include(fieldSlug);
+        if (String(status).substr(0, 1) !== '!') {
+            qry.equalTo('status', status);
+        } else {
+            qry.notEqualTo('status', String(status).substr(1));
         }
-    }
 
-    qry[order](orderBy)
-        .limit(limit)
-        .skip(skip);
+        // get list from id list params if found
+        if (ids.length > 0) {
+            qry.containedIn('objectId', ids);
+        } else if (uuids.length > 0) {
+            qry.containedIn('uuid', uuids);
+        } else if (slugs.length > 0) {
+            qry.containedIn('slug', slugs);
+        }
 
-    /**
-     * @api {Hook} content-query content-query
-     * @apiDescription Called before a content query has taken place via Content.list() function.
-     * @apiParam {Array} query Actinium Query object
-     * @apiParam {Object} params The request.params object
-     * @apiParam {Object} options The request options object
-     * @apiName content-query
-     * @apiGroup Hooks
-     */
-    await Actinium.Hook.run('content-query', qry, params, options);
+        const title = op.get(params, 'title');
+        if (title) {
+            const reg = new RegExp(title, 'gi');
+            qry.matches('title', reg);
+        }
 
-    const pages = Math.ceil(count / limit);
-    const next = page + 1 <= pages ? page + 1 : null;
-    const prev = page - 1 > 0 && page <= pages ? page - 1 : null;
-    const results = await qry.find(options);
+        /**
+         * @api {Hook} content-query-count content-query-count
+         * @apiDescription Called before a content query count has taken place via Content.list() function.
+         * @apiParam {Object} query Actinium Query object
+         * @apiParam {Object} params The request.params object
+         * @apiParam {Object} options The request options object
+         * @apiName content-query-count
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run('content-query-count', qry, params, options);
 
-    /**
-     * @api {Hook} content-query-results content-query-results
-     * @apiDescription Called after a content query has taken place via Content.list() function.
-     * @apiParam {Array} results Array of Actinium Objects
-     * @apiParam {Object} params The request.params object
-     * @apiParam {Object} options The request options object
-     * @apiName content-query-results
-     * @apiGroup Hooks
-     */
-    await Actinium.Hook.run('content-query-results', results, params, options);
+        const count = await qry.count(options);
+        if (optimize && count <= 1000) {
+            page = 1;
+            limit = 1000;
+        }
 
-    // Attach Relations
-    const relationQueries = {
-        all: [],
-        queries: {},
-    };
+        const cacheKey = [
+            `content-${collection}`,
+            _.compact([
+                limit,
+                page,
+                order,
+                orderBy,
+                status,
+                resolveRelations ? 'resolve' : 'dontresolve',
+                count,
+            ]).join('_'),
+        ];
 
-    const attachments = {};
-    if (resolveRelations) {
-        for (const content of results) {
-            for (const [fieldSlug] of relations) {
-                const qry = content.relation(fieldSlug).query();
-                const qPath = [content.id, fieldSlug];
-                op.set(relationQueries.queries, qPath, qry);
-                relationQueries.all.push(qPath);
+        let response = Actinium.Cache.get(cacheKey);
+        if (response && !refresh) return response;
+
+        const { schema } = await Actinium.Content.getSchema(typeObj);
+        const skip = page * limit - limit;
+
+        // Resolve Relations
+        const pointers = Object.entries(schema).filter(
+            ([, fs]) =>
+                op.get(fs, 'type') === 'Pointer' &&
+                op.get(fs, 'targetClass') !== '_User',
+        );
+        const relations = Object.entries(schema).filter(
+            ([, fs]) =>
+                op.get(fs, 'type') === 'Relation' &&
+                op.get(fs, 'targetClass') !== '_User',
+        );
+
+        // Attach Relations
+        if (resolveRelations) {
+            for (const [fieldSlug] of pointers) {
+                qry.include(fieldSlug);
             }
         }
 
-        // chunk queries to keep stuff reasonable
-        for (const chunk of _.chunk(relationQueries.all, limit)) {
-            const relationResultsChunk = await Promise.all(
-                chunk.map(async ([id, fieldSlug]) => {
-                    return {
-                        id,
-                        fieldSlug,
-                        fieldData: await op
-                            .get(relationQueries.queries, [id, fieldSlug])
-                            .find(options),
-                    };
-                }),
-            );
+        qry[order](orderBy).limit(limit).skip(skip);
 
-            relationResultsChunk.forEach(({ id, fieldSlug, fieldData }) =>
-                op.set(
-                    attachments,
-                    [id, fieldSlug],
-                    fieldData.map(Actinium.Utils.serialize),
-                ),
-            );
+        /**
+         * @api {Hook} content-query content-query
+         * @apiDescription Called before a content query has taken place via Content.list() function.
+         * @apiParam {Array} query Actinium Query object
+         * @apiParam {Object} params The request.params object
+         * @apiParam {Object} options The request options object
+         * @apiName content-query
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run('content-query', qry, params, options);
+
+        const pages = Math.ceil(count / limit);
+        const next = page + 1 <= pages ? page + 1 : null;
+        const prev = page - 1 > 0 && page <= pages ? page - 1 : null;
+        const results = await qry.find(options);
+
+        /**
+         * @api {Hook} content-query-results content-query-results
+         * @apiDescription Called after a content query has taken place via Content.list() function.
+         * @apiParam {Array} results Array of Actinium Objects
+         * @apiParam {Object} params The request.params object
+         * @apiParam {Object} options The request options object
+         * @apiName content-query-results
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run(
+            'content-query-results',
+            results,
+            params,
+            options,
+        );
+
+        // Attach Relations
+        const relationQueries = {
+            all: [],
+            queries: {},
+        };
+
+        const attachments = {};
+        if (resolveRelations) {
+            for (const content of results) {
+                for (const [fieldSlug] of relations) {
+                    const qry = content.relation(fieldSlug).query();
+                    const qPath = [content.id, fieldSlug];
+                    op.set(relationQueries.queries, qPath, qry);
+                    relationQueries.all.push(qPath);
+                }
+            }
+
+            // chunk queries to keep stuff reasonable
+            for (const chunk of _.chunk(relationQueries.all, limit)) {
+                const relationResultsChunk = await Promise.all(
+                    chunk.map(async ([id, fieldSlug]) => {
+                        return {
+                            id,
+                            fieldSlug,
+                            fieldData: await op
+                                .get(relationQueries.queries, [id, fieldSlug])
+                                .find(options),
+                        };
+                    }),
+                );
+
+                relationResultsChunk.forEach(({ id, fieldSlug, fieldData }) =>
+                    op.set(
+                        attachments,
+                        [id, fieldSlug],
+                        fieldData.map(Actinium.Utils.serialize),
+                    ),
+                );
+            }
         }
-    }
 
-    const serializedResults = results
-        .map(Actinium.Utils.serialize)
-        .map(content => {
-            return {
-                ...content,
-                ...op.get(attachments, content.objectId, {}),
-                // these are added by content-retrieve, so we will do here too
-                type: typeObj,
-                schema,
-            };
-        });
+        const serializedResults = results
+            .map(Actinium.Utils.serialize)
+            .map((content) => {
+                return {
+                    ...content,
+                    ...op.get(attachments, content.objectId, {}),
+                    // these are added by content-retrieve, so we will do here too
+                    type: typeObj,
+                    schema,
+                };
+            });
 
-    response = {
-        count,
-        next,
-        page,
-        pages,
-        prev,
-        limit,
-        order,
-        orderBy,
-        indexBy,
-        results: serializedResults,
+        response = {
+            count,
+            next,
+            page,
+            pages,
+            prev,
+            limit,
+            order,
+            orderBy,
+            indexBy,
+            results: serializedResults,
+        };
+
+        if (indexBy) {
+            op.set(response, 'results', _.indexBy(response.results, indexBy));
+        }
+
+        Actinium.Cache.set(cacheKey, response, ENUMS.CACHE);
+
+        /**
+         * @api {Hook} content-list content-list
+         * @apiDescription Called before the response object is return from Content.list()
+         * @apiParam {Object} response Response object
+         * @apiParam {Object} params The request.params object
+         * @apiParam {Object} options The request options object
+         * @apiName content-list
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run('content-list', response, params, options);
+
+        return response;
     };
 
-    if (indexBy) {
-        op.set(response, 'results', _.indexBy(response.results, indexBy));
-    }
+    Content.listAll = async (params, options) => {
+        const indexBy = op.get(params, 'indexBy', 'objectId');
+        const { types } = await Actinium.Type.list({}, options);
+        let output = {};
+        let content = [];
 
-    Actinium.Cache.set(cacheKey, response, ENUMS.CACHE);
+        op.del(params, 'indexBy');
+        op.del(params, 'page');
 
-    /**
-     * @api {Hook} content-list content-list
-     * @apiDescription Called before the response object is return from Content.list()
-     * @apiParam {Object} response Response object
-     * @apiParam {Object} params The request.params object
-     * @apiParam {Object} options The request options object
-     * @apiName content-list
-     * @apiGroup Hooks
-     */
-    await Actinium.Hook.run('content-list', response, params, options);
+        for (let type of types) {
+            let page = 1;
+            const { machineName } = type;
+            const p = {
+                ...params,
+                page,
+                type: { machineName },
+                indexBy: 'objectId',
+            };
+            let { pages, results } = await Content.list(p, options);
 
-    return response;
-};
-
-Content.listAll = async (params, options) => {
-    const indexBy = op.get(params, 'indexBy', 'objectId');
-    const { types } = await Actinium.Type.list({}, options);
-    let output = {};
-    let content = [];
-
-    op.del(params, 'indexBy');
-    op.del(params, 'page');
-
-    for (let type of types) {
-        let page = 1;
-        const { machineName } = type;
-        const p = {
-            ...params,
-            page,
-            type: { machineName },
-            indexBy: 'objectId',
-        };
-        let { pages, results } = await Content.list(p, options);
-
-        content = content.concat(Object.values(results));
-
-        page += 1;
-
-        while (page <= pages) {
-            op.set(p, page, page);
-            let { results } = await Content.list(p, options);
             content = content.concat(Object.values(results));
+
             page += 1;
+
+            while (page <= pages) {
+                op.set(p, page, page);
+                let { results } = await Content.list(p, options);
+                content = content.concat(Object.values(results));
+                page += 1;
+            }
+
+            op.set(output, op.get(type, indexBy), content);
         }
 
-        op.set(output, op.get(type, indexBy), content);
-    }
+        return output;
+    };
 
-    return output;
-};
-
-/**
+    /**
  * @api {Asynchronous} Content.create(params,options) Content.create()
  * @apiDescription Create new content of a defined Type. In addition to the required parameters of
  `type` and `slug`, you can provide any parameter's that conform to the runtime fields saved for that type.
@@ -1308,163 +1341,167 @@ Content.listAll = async (params, options) => {
  * @apiName Content.create
  * @apiGroup Actinium
  */
-Content.create = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
+    Content.create = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
 
-    // retrieve type
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-    const type = new Actinium.Object('Type');
-    type.id = typeObj.objectId;
+        // retrieve type
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
+        const type = new Actinium.Object('Type');
+        type.id = typeObj.objectId;
 
-    // construct content
-    const collection = op.get(typeObj, 'collection');
-    if (!collection) throw new Error('Invalid type. No collection defined.');
-    const content = new Actinium.Object(collection);
-    const namespace = op.get(typeObj, 'uuid');
+        // construct content
+        const collection = op.get(typeObj, 'collection');
+        if (!collection)
+            throw new Error('Invalid type. No collection defined.');
+        const content = new Actinium.Object(collection);
+        const namespace = op.get(typeObj, 'uuid');
 
-    const title = op.get(params, 'title');
-    if (!title) throw new Error('Content title required.');
+        const title = op.get(params, 'title');
+        if (!title) throw new Error('Content title required.');
 
-    // slug check
-    const slugs = op.get(typeObj, 'slugs', []) || [];
-    let slug = op.get(params, 'slug');
-    if (!slug || typeof slug !== 'string')
-        throw new Error('Content slug required');
-    slug = require('slugify')(slug, {
-        lower: true,
-    });
-    if (slugs.includes(slug)) throw new Error(`Slug ${slug} already taken`);
-    type.addUnique('slugs', slug);
+        // slug check
+        const slugs = op.get(typeObj, 'slugs', []) || [];
+        let slug = op.get(params, 'slug');
+        if (!slug || typeof slug !== 'string')
+            throw new Error('Content slug required');
+        slug = slugify(slug, {
+            lower: true,
+        });
+        if (slugs.includes(slug)) throw new Error(`Slug ${slug} already taken`);
+        type.addUnique('slugs', slug);
 
-    content.set('slug', slug);
-    content.set('title', title);
-    content.set('type', {
-        machineName: typeObj.machineName,
-        uuid: typeObj.uuid,
-    });
-    content.set('uuid', uuidv5(slug, namespace));
-    content.set('meta', op.get(params, 'meta', {}));
-    content.set('status', ENUMS.STATUS.DRAFT);
+        content.set('slug', slug);
+        content.set('title', title);
+        content.set('type', {
+            machineName: typeObj.machineName,
+            uuid: typeObj.uuid,
+        });
+        content.set('uuid', uuidv5(slug, namespace));
+        content.set('meta', op.get(params, 'meta', {}));
+        content.set('status', ENUMS.STATUS.DRAFT);
 
-    // set ACL
-    const permissions = op.get(params, 'permissions', []);
-    const groupACL = await Actinium.Utils.CloudACL(
-        permissions,
-        `${collection}.retrieve`, // read
-        `${collection}.update`, // write
-    );
-
-    if (op.get(params, 'user')) {
-        const userId = op.get(
-            params,
-            'user.id',
-            op.get(params, 'user.objectId'),
+        // set ACL
+        const permissions = op.get(params, 'permissions', []);
+        const groupACL = await Actinium.Utils.CloudACL(
+            permissions,
+            `${collection}.retrieve`, // read
+            `${collection}.update`, // write
         );
 
-        const user = new Actinium.User();
-        user.set('objectId', userId);
+        if (op.get(params, 'user')) {
+            const userId = op.get(
+                params,
+                'user.id',
+                op.get(params, 'user.objectId'),
+            );
 
-        content.set('user', user);
-        groupACL.setReadAccess(userId, true);
-        groupACL.setWriteAccess(userId, true);
-    }
+            const user = new Actinium.User();
+            user.set('objectId', userId);
 
-    content.setACL(groupACL);
+            content.set('user', user);
+            groupACL.setReadAccess(userId, true);
+            groupACL.setWriteAccess(userId, true);
+        }
 
-    const sanitized = await Actinium.Content.sanitize(
-        {
-            ...params,
-            type: typeObj,
-        },
-        content,
-    );
+        content.setACL(groupACL);
 
-    for (const { fieldSlug, fieldValue } of sanitized) {
-        if (fieldSlug && typeof fieldValue !== 'undefined')
-            content.set(fieldSlug, fieldValue);
-    }
-
-    // Create new revision branch
-    const { branches, history } = await Actinium.Content.createBranch(
-        content,
-        typeObj,
-        'master',
-        'Master',
-        options,
-    );
-
-    content.set('branches', branches);
-    // only set content history on creation and publishing
-    content.set('history', history);
-
-    /**
-     * @api {Hook} content-before-save content-before-save
-     * @apiDescription Called after content saved with `Content.create()` or `Content.update()`
-     * @apiParam {Object} contentObj the Content Actinium.Object
-     * @apiParam {Object} typeObj the content Type Actinium.Object
-     * @apiParam {Boolean} isNew If the content object is new or existing.
-     * @apiParam {Object} params The request.params object.
-     * @apiName content-before-save
-     * @apiGroup Hooks
-     */
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        type,
-        true,
-        params,
-        options,
-    );
-
-    await content.save(null, options);
-
-    await type.save(null, masterOptions);
-    const contentObj = serialize(content);
-
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection: typeObj.collection,
-            userId,
-            changeType: ENUMS.CHANGES.CREATED,
-            meta: {
-                uuid: op.get(contentObj, 'uuid'),
-                slug: op.get(contentObj, 'slug'),
-                type: op.get(typeObj, 'type'),
-                branch: op.get(branches, op.get(history, 'branch'), {}),
-                history,
+        const sanitized = await Actinium.Content.sanitize(
+            {
+                ...params,
+                type: typeObj,
             },
-        },
-        masterOptions,
-    );
+            content,
+        );
+
+        for (const { fieldSlug, fieldValue } of sanitized) {
+            if (fieldSlug && typeof fieldValue !== 'undefined')
+                content.set(fieldSlug, fieldValue);
+        }
+
+        // Create new revision branch
+        const { branches, history } = await Actinium.Content.createBranch(
+            content,
+            typeObj,
+            'master',
+            'Master',
+            options,
+        );
+
+        content.set('branches', branches);
+        // only set content history on creation and publishing
+        content.set('history', history);
+
+        /**
+         * @api {Hook} content-before-save content-before-save
+         * @apiDescription Called after content saved with `Content.create()` or `Content.update()`
+         * @apiParam {Object} contentObj the Content Actinium.Object
+         * @apiParam {Object} typeObj the content Type Actinium.Object
+         * @apiParam {Boolean} isNew If the content object is new or existing.
+         * @apiParam {Object} params The request.params object.
+         * @apiName content-before-save
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            type,
+            true,
+            params,
+            options,
+        );
+
+        await content.save(null, options);
+
+        await type.save(null, masterOptions);
+        const contentObj = serialize(content);
+
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection: typeObj.collection,
+                userId,
+                changeType: ENUMS.CHANGES.CREATED,
+                meta: {
+                    uuid: op.get(contentObj, 'uuid'),
+                    slug: op.get(contentObj, 'slug'),
+                    type: op.get(typeObj, 'type'),
+                    branch: op.get(branches, op.get(history, 'branch'), {}),
+                    history,
+                },
+            },
+            masterOptions,
+        );
+
+        /**
+         * @api {Hook} content-saved content-saved
+         * @apiDescription Called after content saved with `Content.create()` or `Content.update()`
+         * @apiParam {Object} contentObj the saved content object
+         * @apiParam {Object} typeObj the type of the content
+         * @apiParam {Boolean} isNew If the content object is new or existing.
+         * @apiParam {Object} params The request.params object.
+         * @apiName content-saved
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run(
+            'content-saved',
+            contentObj,
+            typeObj,
+            true,
+            params,
+            options,
+        );
+        return contentObj;
+    };
 
     /**
-     * @api {Hook} content-saved content-saved
-     * @apiDescription Called after content saved with `Content.create()` or `Content.update()`
-     * @apiParam {Object} contentObj the saved content object
-     * @apiParam {Object} typeObj the type of the content
-     * @apiParam {Boolean} isNew If the content object is new or existing.
-     * @apiParam {Object} params The request.params object.
-     * @apiName content-saved
-     * @apiGroup Hooks
-     */
-    await Actinium.Hook.run(
-        'content-saved',
-        contentObj,
-        typeObj,
-        true,
-        params,
-        options,
-    );
-    return contentObj;
-};
-
-/**
  * @api {Asynchronous} Content.clone(params,options) Content.clone()
  * @apiDescription Clones one item of content.
  * @apiParam {Object} params parameters for content
@@ -1480,136 +1517,148 @@ Content.create = async (params, options) => {
  * @apiName Content.clone
  * @apiGroup Actinium
  */
-Content.clone = async (params, options) => {
-    op.set(params, 'current', true);
-    op.set(params, 'resolveRelations', true);
+    Content.clone = async (params, options) => {
+        op.set(params, 'current', true);
+        op.set(params, 'resolveRelations', true);
 
-    const sourceObj = await Content.retrieve(params, options);
+        const sourceObj = await Content.retrieve(params, options);
 
-    const targetObjClip = ['uuid', 'objectId', 'slug', 'branches', 'history'];
-    let targetObj = { ...sourceObj };
-    targetObjClip.forEach(key => {
-        delete targetObj[key];
-    });
+        const targetObjClip = [
+            'uuid',
+            'objectId',
+            'slug',
+            'branches',
+            'history',
+        ];
+        let targetObj = { ...sourceObj };
+        targetObjClip.forEach((key) => {
+            delete targetObj[key];
+        });
+
+        /**
+         * @api {Hook} content-before-clone content-before-clone
+         * @apiDescription Called before cloning content object.
+         * @apiParam {Object} targetObj the content object to be saved
+         * @apiParam {Object} sourceObj the original source content object being cloned from
+         * @apiParam {Object} params The request.params object.
+         * @apiParam {Object} options The sessions save options.
+         * @apiName content-before-clone
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run(
+            'content-before-clone',
+            targetObj,
+            sourceObj,
+            params,
+            options,
+        );
+
+        return Content.create(targetObj, options);
+    };
 
     /**
-     * @api {Hook} content-before-clone content-before-clone
-     * @apiDescription Called before cloning content object.
-     * @apiParam {Object} targetObj the content object to be saved
-     * @apiParam {Object} sourceObj the original source content object being cloned from
-     * @apiParam {Object} params The request.params object.
-     * @apiParam {Object} options The sessions save options.
-     * @apiName content-before-clone
-     * @apiGroup Hooks
+     * @api {Asynchronous} Content.changeSlug(params,options) Content.changeSlug()
+     * @apiDescription Update the official slug for existing content. This results in a new uuid.
+     * @apiParam {Object} params parameters for content lookup and newSlug
+     * @apiParam {Object} options Parse Query options (controls access)
+     * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
+     * @apiParam (params) {String} newSlug The new content slug.
+     * @apiParam (params) {String} [slug] The unique slug for the content (for lookup only).
+     * @apiParam (params) {String} [objectId] The Parse object id of the content (for lookup only).
+     * @apiParam (params) {String} [uuid] The uuid of the content. (for lookup only)
+     * @apiParam (type) {String} [objectId] Parse objectId of content type
+     * @apiParam (type) {String} [uuid] UUID of content type
+     * @apiParam (type) {String} [machineName] the machine name of the existing content type
+     * @apiName Content.changeSlug
+     * @apiGroup Actinium
      */
-    await Actinium.Hook.run(
-        'content-before-clone',
-        targetObj,
-        sourceObj,
-        params,
-        options,
-    );
+    Content.changeSlug = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(params, options);
+        if (!contentObj) throw 'Unable to find content';
 
-    return Content.create(targetObj, options);
-};
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
 
-/**
- * @api {Asynchronous} Content.changeSlug(params,options) Content.changeSlug()
- * @apiDescription Update the official slug for existing content. This results in a new uuid.
- * @apiParam {Object} params parameters for content lookup and newSlug
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam (params) {String} newSlug The new content slug.
- * @apiParam (params) {String} [slug] The unique slug for the content (for lookup only).
- * @apiParam (params) {String} [objectId] The Parse object id of the content (for lookup only).
- * @apiParam (params) {String} [uuid] The uuid of the content. (for lookup only)
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiName Content.changeSlug
- * @apiGroup Actinium
- */
-Content.changeSlug = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(params, options);
-    if (!contentObj) throw 'Unable to find content';
+        const content = new Actinium.Object(typeObj.collection);
+        content.id = contentObj.objectId;
+        const { slug: originalSlug, uuid: originalUUID } = contentObj;
 
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
+        // slug check
+        const slugs = _.without(
+            op.get(typeObj, 'slugs', []) || [],
+            originalSlug,
+        );
+        let slug = op.get(params, 'newSlug');
+        if (!slug || typeof slug !== 'string')
+            throw new Error('Content slug required');
+        slug = slugify(slug, {
+            lower: true,
+        });
+        if (slugs.includes(slug)) throw new Error(`Slug ${slug} already taken`);
 
-    const content = new Actinium.Object(typeObj.collection);
-    content.id = contentObj.objectId;
-    const { slug: originalSlug, uuid: originalUUID } = contentObj;
+        const type = new Actinium.Object('Type');
+        type.id = typeObj.objectId;
+        await type.fetch(masterOptions);
 
-    // slug check
-    const slugs = _.without(op.get(typeObj, 'slugs', []) || [], originalSlug);
-    let slug = op.get(params, 'newSlug');
-    if (!slug || typeof slug !== 'string')
-        throw new Error('Content slug required');
-    slug = require('slugify')(slug, {
-        lower: true,
-    });
-    if (slugs.includes(slug)) throw new Error(`Slug ${slug} already taken`);
+        type.set(slugs.concat([slug]));
 
-    const type = new Actinium.Object('Type');
-    type.id = typeObj.objectId;
-    await type.fetch(masterOptions);
+        content.set('slug', slug);
+        op.set(contentObj, 'slug', slug);
+        const namespace = op.get(typeObj, 'uuid');
+        const uuid = uuidv5(slug, namespace);
+        content.set('uuid', uuid);
+        op.set(contentObj, 'uuid', uuid);
 
-    type.set(slugs.concat([slug]));
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
 
-    content.set('slug', slug);
-    op.set(contentObj, 'slug', slug);
-    const namespace = op.get(typeObj, 'uuid');
-    const uuid = uuidv5(slug, namespace);
-    content.set('uuid', uuid);
-    op.set(contentObj, 'uuid', uuid);
+        await content.save(null, options);
+        await type.save(null, masterOptions);
 
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
-
-    await content.save(null, options);
-    await type.save(null, masterOptions);
-
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection: typeObj.collection,
-            userId,
-            changeType: ENUMS.CHANGES.SLUG_CHANGED,
-            meta: {
-                uuid,
-                slug,
-                type: op.get(typeObj, 'type'),
-                originalSlug,
-                originalUUID,
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection: typeObj.collection,
+                userId,
+                changeType: ENUMS.CHANGES.SLUG_CHANGED,
+                meta: {
+                    uuid,
+                    slug,
+                    type: op.get(typeObj, 'type'),
+                    originalSlug,
+                    originalUUID,
+                },
             },
-        },
-        masterOptions,
-    );
+            masterOptions,
+        );
+
+        /**
+         * @api {Hook} content-slug-changed content-slug-changed
+         * @apiDescription Called after slug/uuid changed with `Content.changeSlug()`
+         * @apiParam {Object} contentObj the saved content object
+         * @apiParam {Object} typeObj the type of the content
+         * @apiName content-slug-changed
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run('content-slug-changed', contentObj, typeObj);
+        return contentObj;
+    };
 
     /**
-     * @api {Hook} content-slug-changed content-slug-changed
-     * @apiDescription Called after slug/uuid changed with `Content.changeSlug()`
-     * @apiParam {Object} contentObj the saved content object
-     * @apiParam {Object} typeObj the type of the content
-     * @apiName content-slug-changed
-     * @apiGroup Hooks
-     */
-    await Actinium.Hook.run('content-slug-changed', contentObj, typeObj);
-    return contentObj;
-};
-
-/**
  * @api {Asynchronous} Content.retrieve(params,options) Content.retrieve()
  * @apiDescription Retrieve one item of content.
  * @apiParam {Object} params parameters for content
@@ -1631,86 +1680,134 @@ Content.changeSlug = async (params, options) => {
  * @apiName Content.retrieve
  * @apiGroup Actinium
  */
-Content.retrieve = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    // retrieve type
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-    const { schema } = await Actinium.Content.getSchema(typeObj);
+    Content.retrieve = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        // retrieve type
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
+        const { schema } = await Actinium.Content.getSchema(typeObj);
 
-    // construct content
-    const collection = op.get(typeObj, 'collection');
-    if (!collection) throw new Error('Invalid type. No collection defined.');
+        // construct content
+        const collection = op.get(typeObj, 'collection');
+        if (!collection)
+            throw new Error('Invalid type. No collection defined.');
 
-    const id = op.get(
-        params,
-        'id',
-        op.get(params, 'ID', op.get(params, 'objectId')),
-    );
-    const uuid = op.get(params, 'uuid');
-    const slug = op.get(params, 'slug');
+        const id = op.get(
+            params,
+            'id',
+            op.get(params, 'ID', op.get(params, 'objectId')),
+        );
+        const uuid = op.get(params, 'uuid');
+        const slug = op.get(params, 'slug');
 
-    const query = new Parse.Query(collection);
-    if (id) query.equalTo('objectId', id);
-    if (uuid) query.equalTo('uuid', uuid);
-    if (slug) query.equalTo('slug', slug);
+        const query = new Parse.Query(collection);
+        if (id) query.equalTo('objectId', id);
+        if (uuid) query.equalTo('uuid', uuid);
+        if (slug) query.equalTo('slug', slug);
 
-    const relationData = {};
-    const pointers = Object.entries(schema).filter(
-        ([, fs]) =>
-            op.get(fs, 'type') === 'Pointer' &&
-            op.get(fs, 'targetClass') !== '_User',
-    );
-    const relations = Object.entries(schema).filter(
-        ([, fs]) =>
-            op.get(fs, 'type') === 'Relation' &&
-            op.get(fs, 'targetClass') !== '_User',
-    );
-    // Attach Pointers
-    if (op.get(params, 'resolveRelations', false) === true) {
-        for (const [fieldSlug] of pointers) {
-            query.include(fieldSlug);
-        }
-    }
-
-    const content = await query.first(options);
-
-    // TODO: Add maybe recursive resolution of relations
-    if (op.get(params, 'resolveRelations', false) === true) {
-        for (const [fieldSlug] of pointers) {
-            content &&
-                content.get(fieldSlug) &&
-                op.set(
-                    relationData,
-                    fieldSlug,
-                    Actinium.Utils.serialize(content.get(fieldSlug)),
-                );
-        }
-    }
-
-    if (content) {
-        const contentObj = serialize(content);
-
-        // Attach Relations
+        const relationData = {};
+        const pointers = Object.entries(schema).filter(
+            ([, fs]) =>
+                op.get(fs, 'type') === 'Pointer' &&
+                op.get(fs, 'targetClass') !== '_User',
+        );
+        const relations = Object.entries(schema).filter(
+            ([, fs]) =>
+                op.get(fs, 'type') === 'Relation' &&
+                op.get(fs, 'targetClass') !== '_User',
+        );
+        // Attach Pointers
         if (op.get(params, 'resolveRelations', false) === true) {
-            for (const [fieldSlug] of relations) {
-                const objs = await content
-                    .relation(fieldSlug)
-                    .query()
-                    .find(options);
-                op.set(relationData, fieldSlug, objs.map(serialize));
+            for (const [fieldSlug] of pointers) {
+                query.include(fieldSlug);
             }
         }
 
-        contentObj['schema'] = schema;
+        const content = await query.first(options);
 
-        // if content is published, and published version is requested, return the current content
-        if (op.get(params, 'current', false) === true) {
-            contentObj['type'] = typeObj;
+        // TODO: Add maybe recursive resolution of relations
+        if (op.get(params, 'resolveRelations', false) === true) {
+            for (const [fieldSlug] of pointers) {
+                content &&
+                    content.get(fieldSlug) &&
+                    op.set(
+                        relationData,
+                        fieldSlug,
+                        Actinium.Utils.serialize(content.get(fieldSlug)),
+                    );
+            }
+        }
+
+        if (content) {
+            const contentObj = serialize(content);
+
+            // Attach Relations
+            if (op.get(params, 'resolveRelations', false) === true) {
+                for (const [fieldSlug] of relations) {
+                    const objs = await content
+                        .relation(fieldSlug)
+                        .query()
+                        .find(options);
+                    op.set(relationData, fieldSlug, objs.map(serialize));
+                }
+            }
+
+            contentObj['schema'] = schema;
+
+            // if content is published, and published version is requested, return the current content
+            if (op.get(params, 'current', false) === true) {
+                contentObj['type'] = typeObj;
+                const output = {
+                    ...contentObj,
+                    ...relationData,
+                };
+
+                await Actinium.Hook.run(
+                    'content-retrieve',
+                    output,
+                    params,
+                    options,
+                    op.get(params, 'current', false) === true,
+                );
+                return output;
+            }
+
+            // build the current revision
+            const branch = op.get(params, 'history.branch', 'master');
+            const revisionIndex = op.get(params, 'history.revision');
+
+            const version = await Actinium.Content.getVersion(
+                contentObj,
+                branch,
+                revisionIndex,
+                masterOptions,
+            );
+
+            version['type'] = typeObj;
+
+            const masterCopyProps = await Actinium.Content.masterCopyProps(
+                contentObj,
+                schema,
+                typeObj,
+            );
             const output = {
-                ...contentObj,
+                ...version,
+                ...masterCopyProps,
                 ...relationData,
             };
 
+            /**
+             * @api {Hook} content-retrieve content-retrieve
+             * @apiDescription Called after a content object is retrieved via Content.retrieve() function.
+             * @apiParam {Object} contentObject Serialized Actinium Content Object
+             * @apiParam {Object} params The request.params object
+             * @apiParam {Object} options The request options object
+             * @apiParam {Boolean} isCurrent Will be true if this response represents the current full version of the content, or a revision.
+             * @apiName content-retrieve
+             * @apiGroup Hooks
+             */
             await Actinium.Hook.run(
                 'content-retrieve',
                 output,
@@ -1718,56 +1815,12 @@ Content.retrieve = async (params, options) => {
                 options,
                 op.get(params, 'current', false) === true,
             );
+
             return output;
         }
+    };
 
-        // build the current revision
-        const branch = op.get(params, 'history.branch', 'master');
-        const revisionIndex = op.get(params, 'history.revision');
-
-        const version = await Actinium.Content.getVersion(
-            contentObj,
-            branch,
-            revisionIndex,
-            masterOptions,
-        );
-
-        version['type'] = typeObj;
-
-        const masterCopyProps = await Actinium.Content.masterCopyProps(
-            contentObj,
-            schema,
-            typeObj,
-        );
-        const output = {
-            ...version,
-            ...masterCopyProps,
-            ...relationData,
-        };
-
-        /**
-         * @api {Hook} content-retrieve content-retrieve
-         * @apiDescription Called after a content object is retrieved via Content.retrieve() function.
-         * @apiParam {Object} contentObject Serialized Actinium Content Object
-         * @apiParam {Object} params The request.params object
-         * @apiParam {Object} options The request options object
-         * @apiParam {Boolean} isCurrent Will be true if this response represents the current full version of the content, or a revision.
-         * @apiName content-retrieve
-         * @apiGroup Hooks
-         */
-        await Actinium.Hook.run(
-            'content-retrieve',
-            output,
-            params,
-            options,
-            op.get(params, 'current', false) === true,
-        );
-
-        return output;
-    }
-};
-
-/**
+    /**
  * @api {Asynchronous} Content.setCurrent(params,options) Content.setCurrent()
  * @apiDescription Take content from a specified branch or revision,
  and make it the "official" version of the content. If no `history` is param is
@@ -1805,83 +1858,89 @@ Actinium.Content.setCurrent({
     history: { branch: 'master' }
 }, { sessionToken: 'lkjasfdliewaoijfesoij'});
  */
-Content.setCurrent = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(params, options);
+    Content.setCurrent = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(params, options);
 
-    if (!contentObj) throw 'Unable to find content';
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
+        if (!contentObj) throw 'Unable to find content';
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
 
-    const content = new Actinium.Object(typeObj.collection);
-    content.id = contentObj.objectId;
+        const content = new Actinium.Object(typeObj.collection);
+        content.id = contentObj.objectId;
 
-    const sanitized = await Actinium.Content.sanitize(
-        {
-            ...contentObj,
-            type: typeObj,
-        },
-        content,
-    );
+        const sanitized = await Actinium.Content.sanitize(
+            {
+                ...contentObj,
+                type: typeObj,
+            },
+            content,
+        );
 
-    for (const { fieldSlug, fieldValue } of sanitized) {
-        if (fieldSlug && typeof fieldValue !== 'undefined')
-            content.set(fieldSlug, fieldValue);
-    }
-
-    content.set('history', contentObj.history);
-
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
-
-    let saved, errors;
-    try {
-        saved = await content.save(null, options);
-        if (saved) {
-            saved = await content.fetch(masterOptions);
-            const savedObj = serialize(saved);
-
-            const userId = op.get(
-                params,
-                'user.objectId',
-                op.get(params, 'user.id', op.get(params, 'userId')),
-            );
-            await Actinium.Content.Log.add(
-                {
-                    contentId: savedObj.objectId,
-                    collection: typeObj.collection,
-                    userId,
-                    changeType: ENUMS.CHANGES.SET_REVISION,
-                    meta: {
-                        uuid: op.get(contentObj, 'uuid'),
-                        slug: op.get(contentObj, 'slug'),
-                        type: op.get(typeObj, 'type'),
-                        branch: op.get(
-                            contentObj,
-                            ['branches', op.get(savedObj, 'history.branch')],
-                            {},
-                        ),
-                        history: savedObj.history,
-                    },
-                },
-                masterOptions,
-            );
-
-            return savedObj;
+        for (const { fieldSlug, fieldValue } of sanitized) {
+            if (fieldSlug && typeof fieldValue !== 'undefined')
+                content.set(fieldSlug, fieldValue);
         }
-    } catch (error) {
-        errors = error;
-    }
 
-    throw errors;
-};
+        content.set('history', contentObj.history);
 
-/**
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
+
+        let saved, errors;
+        try {
+            saved = await content.save(null, options);
+            if (saved) {
+                saved = await content.fetch(masterOptions);
+                const savedObj = serialize(saved);
+
+                const userId = op.get(
+                    params,
+                    'user.objectId',
+                    op.get(params, 'user.id', op.get(params, 'userId')),
+                );
+                await Actinium.Content.Log.add(
+                    {
+                        contentId: savedObj.objectId,
+                        collection: typeObj.collection,
+                        userId,
+                        changeType: ENUMS.CHANGES.SET_REVISION,
+                        meta: {
+                            uuid: op.get(contentObj, 'uuid'),
+                            slug: op.get(contentObj, 'slug'),
+                            type: op.get(typeObj, 'type'),
+                            branch: op.get(
+                                contentObj,
+                                [
+                                    'branches',
+                                    op.get(savedObj, 'history.branch'),
+                                ],
+                                {},
+                            ),
+                            history: savedObj.history,
+                        },
+                    },
+                    masterOptions,
+                );
+
+                return savedObj;
+            }
+        } catch (error) {
+            errors = error;
+        }
+
+        throw errors;
+    };
+
+    /**
  * @api {Asynchronous} Content.setPermissions(params,options) Content.setPermissions()
  * @apiDescription Update permissions for content.
  * @apiParam {Object} params parameters for content
@@ -1902,80 +1961,83 @@ Content.setCurrent = async (params, options) => {
  * @apiName Content.setPermissions
  * @apiGroup Actinium
  */
-Content.setPermissions = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(params, options);
-    if (!contentObj) throw 'Unable to find content';
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-
-    const collection = op.get(typeObj, 'collection');
-    const content = new Actinium.Object(collection);
-    content.id = contentObj.objectId;
-    const permissions = op.get(params, 'permissions', []);
-
-    // set ACL
-    if (Array.isArray(permissions)) {
-        let userId = op.get(contentObj, 'user.objectId');
-        const groupACL = await Actinium.Utils.CloudACL(
-            permissions,
-            `${typeObj.collection}.retrieve`,
-            `${typeObj.collection}.update`,
+    Content.setPermissions = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(params, options);
+        if (!contentObj) throw 'Unable to find content';
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
         );
 
-        if (userId) {
-            groupACL.setReadAccess(userId, true);
-            groupACL.setWriteAccess(userId, true);
-        }
+        const collection = op.get(typeObj, 'collection');
+        const content = new Actinium.Object(collection);
+        content.id = contentObj.objectId;
+        const permissions = op.get(params, 'permissions', []);
 
-        content.setACL(groupACL);
-
-        await Actinium.Hook.run(
-            'content-before-save',
-            content,
-            typeObj,
-            false,
-            params,
-            options,
-        );
-
-        let saved, errors;
-        try {
-            saved = await content.save(null, options);
-            const ACL = saved.getACL();
-
-            const changeUserId = op.get(
-                params,
-                'changeUser.objectId',
-                op.get(params, 'changeUser.id'),
-            );
-            await Actinium.Content.Log.add(
-                {
-                    contentId: contentObj.objectId,
-                    collection,
-                    userId: changeUserId,
-                    changeType: ENUMS.CHANGES.SET_ACL,
-                    meta: {
-                        uuid: op.get(contentObj, 'uuid'),
-                        slug: op.get(contentObj, 'slug'),
-                        type: op.get(typeObj, 'type'),
-                        ACL,
-                    },
-                },
-                masterOptions,
+        // set ACL
+        if (Array.isArray(permissions)) {
+            let userId = op.get(contentObj, 'user.objectId');
+            const groupACL = await Actinium.Utils.CloudACL(
+                permissions,
+                `${typeObj.collection}.retrieve`,
+                `${typeObj.collection}.update`,
             );
 
-            if (saved) {
-                return ACL;
+            if (userId) {
+                groupACL.setReadAccess(userId, true);
+                groupACL.setWriteAccess(userId, true);
             }
-        } catch (error) {
-            errors = error;
+
+            content.setACL(groupACL);
+
+            await Actinium.Hook.run(
+                'content-before-save',
+                content,
+                typeObj,
+                false,
+                params,
+                options,
+            );
+
+            let saved, errors;
+            try {
+                saved = await content.save(null, options);
+                const ACL = saved.getACL();
+
+                const changeUserId = op.get(
+                    params,
+                    'changeUser.objectId',
+                    op.get(params, 'changeUser.id'),
+                );
+                await Actinium.Content.Log.add(
+                    {
+                        contentId: contentObj.objectId,
+                        collection,
+                        userId: changeUserId,
+                        changeType: ENUMS.CHANGES.SET_ACL,
+                        meta: {
+                            uuid: op.get(contentObj, 'uuid'),
+                            slug: op.get(contentObj, 'slug'),
+                            type: op.get(typeObj, 'type'),
+                            ACL,
+                        },
+                    },
+                    masterOptions,
+                );
+
+                if (saved) {
+                    return ACL;
+                }
+            } catch (error) {
+                errors = error;
+            }
+
+            throw errors;
         }
+    };
 
-        throw errors;
-    }
-};
-
-/**
+    /**
  * @api {Asynchronous} Content.update(params,options) Content.update()
  * @apiDescription Update content of a defined Type. In addition to the required parameters of
  `type` and `slug`, you can provide any parameter's that conform to the runtime fields saved for that type.
@@ -2032,213 +2094,219 @@ Content.setPermissions = async (params, options) => {
      history: { branch: 'master' }
  }, { sessionToken: 'lkjasdljadsfoijaef'});
  */
-Content.update = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(params, options);
-    if (!contentObj) throw 'Unable to find content';
+    Content.update = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(params, options);
+        if (!contentObj) throw 'Unable to find content';
 
-    // build the current revision
-    let branchId = op.get(params, 'history.branch', 'master');
-    const revisionIndex = op.get(params, 'history.revision');
-    let currentBranches = op.get(contentObj, 'branches');
-    const revisions = op.get(currentBranches, [branchId, 'history']);
+        // build the current revision
+        let branchId = op.get(params, 'history.branch', 'master');
+        const revisionIndex = op.get(params, 'history.revision');
+        let currentBranches = op.get(contentObj, 'branches');
+        const revisions = op.get(currentBranches, [branchId, 'history']);
 
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-    const content = new Actinium.Object(typeObj.collection);
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
+        const content = new Actinium.Object(typeObj.collection);
 
-    const title = op.get(params, 'title');
-    if (title && op.get(contentObj, 'title') !== title) {
-        content.set('title', title);
-    }
-    content.id = contentObj.objectId;
-    content.set('type', {
-        machineName: typeObj.machineName,
-        uuid: typeObj.uuid,
-        namespace: typeObj.namespace,
-    });
+        const title = op.get(params, 'title');
+        if (title && op.get(contentObj, 'title') !== title) {
+            content.set('title', title);
+        }
+        content.id = contentObj.objectId;
+        content.set('type', {
+            machineName: typeObj.machineName,
+            uuid: typeObj.uuid,
+            namespace: typeObj.namespace,
+        });
 
-    let contentRevision = {
-        ...contentObj,
-    };
+        let contentRevision = {
+            ...contentObj,
+        };
 
-    if (revisions.length > revisionIndex + 1) {
-        const { branches, history } = await Actinium.Content.createBranch(
+        if (revisions.length > revisionIndex + 1) {
+            const { branches, history } = await Actinium.Content.createBranch(
+                contentRevision,
+                typeObj,
+                null,
+                null,
+                masterOptions,
+            );
+
+            branchId = op.get(history, 'branch');
+            op.set(contentRevision, 'branches', branches);
+            op.set(contentRevision, 'history', history);
+        }
+
+        const sanitized = await Actinium.Content.sanitize(
+            {
+                ...params,
+                type: contentObj.type,
+            },
+            content,
+        );
+
+        const diff = await Actinium.Content.diff(contentRevision, sanitized);
+
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
+
+        const contentUpdateBeforeSave = content.toJSON();
+
+        // Changes going into revision
+        if (diff !== false) {
+            // Create new revision branch
+            const newRevision = {
+                collection: typeObj.collection,
+                object: {
+                    ...diff,
+                    ACL: contentObj.ACL,
+                },
+            };
+
+            if (params.user) op.set(newRevision, 'user', params.user);
+            const revision = await Actinium.Recycle.revision(
+                newRevision,
+                masterOptions,
+            );
+
+            currentBranches = op.get(contentRevision, 'branches');
+            currentBranches[branchId].history.push(revision.id);
+
+            content.set('branches', currentBranches);
+            const savedBase = await content.save(null, options);
+
+            const revHistory = {
+                branch: branchId,
+                revision: currentBranches[branchId].history.length - 1,
+            };
+
+            const masterCopyProps = await Actinium.Content.masterCopyProps(
+                savedBase,
+                contentObj.schema,
+                typeObj,
+            );
+
+            contentRevision = {
+                ...contentRevision,
+                ...diff,
+                history: revHistory,
+                ...masterCopyProps,
+            };
+
+            const userId = op.get(
+                params,
+                'user.objectId',
+                op.get(params, 'user.id', op.get(params, 'userId')),
+            );
+
+            await Actinium.Content.Log.add(
+                {
+                    contentId: contentRevision.objectId,
+                    collection: typeObj.collection,
+                    userId,
+                    changeType: ENUMS.CHANGES.REVISED,
+                    meta: {
+                        uuid: op.get(contentObj, 'uuid'),
+                        slug: op.get(contentObj, 'slug'),
+                        type: op.get(typeObj, 'type'),
+                        branch: op.get(
+                            currentBranches,
+                            op.get(revHistory, 'branch'),
+                            {},
+                        ),
+                        history: revHistory,
+                    },
+                },
+                masterOptions,
+            );
+
+            // no revision changes, but content object was updated
+        } else if (Object.values(contentUpdateBeforeSave).length > 0) {
+            // most saves go in revision
+            const savedBase = await content.save(null, options);
+            const masterCopyProps = await Actinium.Content.masterCopyProps(
+                savedBase,
+                contentObj.schema,
+                typeObj,
+            );
+
+            contentRevision = {
+                ...contentRevision,
+                ...masterCopyProps,
+            };
+        }
+
+        // hook documented with api doc at bottom of Content.create()
+        await Actinium.Hook.run(
+            'content-saved',
             contentRevision,
             typeObj,
-            null,
-            null,
-            masterOptions,
-        );
-
-        branchId = op.get(history, 'branch');
-        op.set(contentRevision, 'branches', branches);
-        op.set(contentRevision, 'history', history);
-    }
-
-    const sanitized = await Actinium.Content.sanitize(
-        {
-            ...params,
-            type: contentObj.type,
-        },
-        content,
-    );
-
-    const diff = await Actinium.Content.diff(contentRevision, sanitized);
-
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
-
-    const contentUpdateBeforeSave = content.toJSON();
-
-    // Changes going into revision
-    if (diff !== false) {
-        // Create new revision branch
-        const newRevision = {
-            collection: typeObj.collection,
-            object: {
-                ...diff,
-                ACL: contentObj.ACL,
-            },
-        };
-
-        if (params.user) op.set(newRevision, 'user', params.user);
-        const revision = await Actinium.Recycle.revision(
-            newRevision,
-            masterOptions,
-        );
-
-        currentBranches = op.get(contentRevision, 'branches');
-        currentBranches[branchId].history.push(revision.id);
-
-        content.set('branches', currentBranches);
-        const savedBase = await content.save(null, options);
-
-        const revHistory = {
-            branch: branchId,
-            revision: currentBranches[branchId].history.length - 1,
-        };
-
-        const masterCopyProps = await Actinium.Content.masterCopyProps(
-            savedBase,
-            contentObj.schema,
-            typeObj,
-        );
-
-        contentRevision = {
-            ...contentRevision,
-            ...diff,
-            history: revHistory,
-            ...masterCopyProps,
-        };
-
-        const userId = op.get(
+            false,
             params,
-            'user.objectId',
-            op.get(params, 'user.id', op.get(params, 'userId')),
+            options,
         );
 
-        await Actinium.Content.Log.add(
-            {
-                contentId: contentRevision.objectId,
-                collection: typeObj.collection,
-                userId,
-                changeType: ENUMS.CHANGES.REVISED,
-                meta: {
-                    uuid: op.get(contentObj, 'uuid'),
-                    slug: op.get(contentObj, 'slug'),
-                    type: op.get(typeObj, 'type'),
-                    branch: op.get(
-                        currentBranches,
-                        op.get(revHistory, 'branch'),
-                        {},
-                    ),
-                    history: revHistory,
-                },
-            },
-            masterOptions,
-        );
-
-        // no revision changes, but content object was updated
-    } else if (Object.values(contentUpdateBeforeSave).length > 0) {
-        // most saves go in revision
-        const savedBase = await content.save(null, options);
-        const masterCopyProps = await Actinium.Content.masterCopyProps(
-            savedBase,
-            contentObj.schema,
-            typeObj,
-        );
-
-        contentRevision = {
-            ...contentRevision,
-            ...masterCopyProps,
-        };
-    }
-
-    // hook documented with api doc at bottom of Content.create()
-    await Actinium.Hook.run(
-        'content-saved',
-        contentRevision,
-        typeObj,
-        false,
-        params,
-        options,
-    );
-
-    return contentRevision;
-};
-
-/**
- * @api {Asynchronous} Content.trash(params,options) Content.trash()
- * @apiDescription Mark content for deletion.
- * @apiParam {Object} params parameters for content
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam (params) {String} [slug] The unique slug for the content.
- * @apiParam (params) {String} [objectId] The Parse object id of the content.
- * @apiParam (params) {String} [uuid] The uuid of the content.
- * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiParam (history) {String} [branch=master] the revision branch of current content
- * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
- * @apiName Content.trash
- * @apiGroup Actinium
- */
-Content.trash = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-
-    params.status = ENUMS.STATUS.TRASH;
-    params.reason = ENUMS.CHANGES.TRASHED;
-
-    const contentObj = await Actinium.Content.setStatus(params, options);
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
+        return contentRevision;
+    };
 
     /**
-     * @api {Hook} content-trashed content-trashed
-     * @apiDescription Called after `Content.trash()`
-     * @apiParam {Object} contentObj the content marked trash
-     * @apiParam {Object} typeObj the type of the content
-     * @apiName content-trashed
-     * @apiGroup Hooks
+     * @api {Asynchronous} Content.trash(params,options) Content.trash()
+     * @apiDescription Mark content for deletion.
+     * @apiParam {Object} params parameters for content
+     * @apiParam {Object} options Parse Query options (controls access)
+     * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
+     * @apiParam (params) {String} [slug] The unique slug for the content.
+     * @apiParam (params) {String} [objectId] The Parse object id of the content.
+     * @apiParam (params) {String} [uuid] The uuid of the content.
+     * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
+     * @apiParam (type) {String} [objectId] Parse objectId of content type
+     * @apiParam (type) {String} [uuid] UUID of content type
+     * @apiParam (type) {String} [machineName] the machine name of the existing content type
+     * @apiParam (history) {String} [branch=master] the revision branch of current content
+     * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
+     * @apiName Content.trash
+     * @apiGroup Actinium
      */
-    await Actinium.Hook.run(
-        'content-trashed',
-        contentObj,
-        typeObj,
-        params,
-        options,
-    );
-    return contentObj;
-};
+    Content.trash = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
 
-/**
+        params.status = ENUMS.STATUS.TRASH;
+        params.reason = ENUMS.CHANGES.TRASHED;
+
+        const contentObj = await Actinium.Content.setStatus(params, options);
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
+
+        /**
+         * @api {Hook} content-trashed content-trashed
+         * @apiDescription Called after `Content.trash()`
+         * @apiParam {Object} contentObj the content marked trash
+         * @apiParam {Object} typeObj the type of the content
+         * @apiName content-trashed
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run(
+            'content-trashed',
+            contentObj,
+            typeObj,
+            params,
+            options,
+        );
+        return contentObj;
+    };
+
+    /**
  * @api {Asynchronous} Content.masterCopyProps(content,schema,type) Content.masterCopyProps()
  * @apiDescription Return subset of all properties from master copy of content that *must* come from the master copy (not revisions). This helps with certainty about
  which properties are coming from the collection, and which may be coming from revisions.
@@ -2248,41 +2316,41 @@ Content.trash = async (params, options) => {
  * @apiName Content.masterCopyProps
  * @apiGroup Actinium
  */
-Content.masterCopyProps = async (contentObject, schema, typeObj) => {
-    const content = serialize(contentObject);
-    const masterCopyFields = {
-        objectId: true,
-        slug: true,
-        uuid: true,
-        title: true,
-        branches: true,
-        publish: true,
-        status: true,
-        meta: true,
-        ACL: true,
-        user: true,
-        createdAt: true,
-        updatedAt: true,
+    Content.masterCopyProps = async (contentObject, schema, typeObj) => {
+        const content = serialize(contentObject);
+        const masterCopyFields = {
+            objectId: true,
+            slug: true,
+            uuid: true,
+            title: true,
+            branches: true,
+            publish: true,
+            status: true,
+            meta: true,
+            ACL: true,
+            user: true,
+            createdAt: true,
+            updatedAt: true,
+        };
+
+        await Actinium.Hook.run(
+            'content-master-copy-fields',
+            masterCopyFields,
+            schema,
+            typeObj,
+        );
+
+        const props = {};
+        for (const [prop, included] of Object.entries(masterCopyFields)) {
+            if (included === true && op.has(content, prop)) {
+                op.set(props, prop, op.get(content, prop));
+            }
+        }
+
+        return props;
     };
 
-    await Actinium.Hook.run(
-        'content-master-copy-fields',
-        masterCopyFields,
-        schema,
-        typeObj,
-    );
-
-    const props = {};
-    for (const [prop, included] of Object.entries(masterCopyFields)) {
-        if (included === true && op.has(content, prop)) {
-            op.set(props, prop, op.get(content, prop));
-        }
-    }
-
-    return props;
-};
-
-/**
+    /**
  * @api {Asynchronous} Content.delete(params,options) Content.delete()
  * @apiDescription Delete content of a defined Type. To identify the content, you must provided
 the `type` object, and one of `slug`, `objectId`, or `uuid` of the content. Destroys
@@ -2300,97 +2368,102 @@ record.
  * @apiName Content.delete
  * @apiGroup Actinium
  */
-Content.delete = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(
-        {
-            ...params,
-            current: true,
-        },
-        masterOptions,
-    );
-
-    if (!contentObj) return contentObj;
-
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-    const collection = op.get(typeObj, 'collection');
-
-    const content = new Actinium.Object(typeObj.collection);
-    content.id = contentObj.objectId;
-
-    const type = new Actinium.Object('Type');
-    type.id = typeObj.objectId;
-    await type.fetch(masterOptions);
-
-    await content.destroy(options);
-
-    // Add master record as trash
-    const trashParams = { collection, object: contentObj };
-    if (params.user) trashParams.user = params.user;
-    const trash = await Actinium.Recycle.trash(trashParams, masterOptions);
-
-    // target all revisions for cleanup
-    const revisions = _.chain(Object.values(op.get(contentObj, 'branches', {})))
-        .pluck('history')
-        .flatten()
-        .uniq()
-        .value()
-        .map(objectId => {
-            const rev = new Actinium.Object('Recycle');
-            rev.id = objectId;
-            rev.set('type', 'trash');
-            return rev;
-        });
-    await Actinium.Object.saveAll(revisions, masterOptions);
-
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection,
-            userId,
-            changeType: ENUMS.CHANGES.DELETED,
-            meta: {
-                uuid: op.get(contentObj, 'uuid'),
-                slug: op.get(contentObj, 'slug'),
-                type: op.get(typeObj, 'type'),
+    Content.delete = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(
+            {
+                ...params,
+                current: true,
             },
-        },
-        masterOptions,
-    );
+            masterOptions,
+        );
 
-    // update type to free up the slug
-    type.remove('slugs', op.get(contentObj, 'slug'));
-    await type.save(null, masterOptions);
+        if (!contentObj) return contentObj;
+
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
+        const collection = op.get(typeObj, 'collection');
+
+        const content = new Actinium.Object(typeObj.collection);
+        content.id = contentObj.objectId;
+
+        const type = new Actinium.Object('Type');
+        type.id = typeObj.objectId;
+        await type.fetch(masterOptions);
+
+        await content.destroy(options);
+
+        // Add master record as trash
+        const trashParams = { collection, object: contentObj };
+        if (params.user) trashParams.user = params.user;
+        const trash = await Actinium.Recycle.trash(trashParams, masterOptions);
+
+        // target all revisions for cleanup
+        const revisions = _.chain(
+            Object.values(op.get(contentObj, 'branches', {})),
+        )
+            .pluck('history')
+            .flatten()
+            .uniq()
+            .value()
+            .map((objectId) => {
+                const rev = new Actinium.Object('Recycle');
+                rev.id = objectId;
+                rev.set('type', 'trash');
+                return rev;
+            });
+        await Actinium.Object.saveAll(revisions, masterOptions);
+
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection,
+                userId,
+                changeType: ENUMS.CHANGES.DELETED,
+                meta: {
+                    uuid: op.get(contentObj, 'uuid'),
+                    slug: op.get(contentObj, 'slug'),
+                    type: op.get(typeObj, 'type'),
+                },
+            },
+            masterOptions,
+        );
+
+        // update type to free up the slug
+        type.remove('slugs', op.get(contentObj, 'slug'));
+        await type.save(null, masterOptions);
+
+        /**
+         * @api {Hook} content-deleted content-deleted
+         * @apiDescription Called after `Content.delete()`
+         * @apiParam {Object} contentObj The Content Object
+         * @apiParam {Object} typeObj The Type Object
+         * @apiParam {Object} trash The Trash Object
+         * @apiParam {Object} params The request.params object
+         * @apiParam {Object} options The Cloud run options
+         * @apiName content-deleted
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run(
+            'content-deleted',
+            contentObj,
+            typeObj,
+            trash,
+            params,
+            options,
+        );
+
+        return trash;
+    };
 
     /**
-     * @api {Hook} content-deleted content-deleted
-     * @apiDescription Called after `Content.delete()`
-     * @apiParam {Object} contentObj The Content Object
-     * @apiParam {Object} typeObj The Type Object
-     * @apiParam {Object} trash The Trash Object
-     * @apiParam {Object} params The request.params object
-     * @apiParam {Object} options The Cloud run options
-     * @apiName content-deleted
-     * @apiGroup Hooks
-     */
-    await Actinium.Hook.run(
-        'content-deleted',
-        contentObj,
-        typeObj,
-        trash,
-        params,
-        options,
-    );
-
-    return trash;
-};
-
-/**
  * @api {Asynchronous} Content.restore(params,options) Content.restore()
  * @apiDescription Restore deleted content of a defined Type (if still in recycle).
  To identify the content, you must provided the `type` object, and `objectId` of
@@ -2405,290 +2478,305 @@ Content.delete = async (params, options) => {
  * @apiName Content.restore
  * @apiGroup Actinium
  */
-Content.restore = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-    const collection = op.get(typeObj, 'collection');
+    Content.restore = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
+        const collection = op.get(typeObj, 'collection');
 
-    // restore master record
-    const restored = await Actinium.Recycle.restore(
-        {
-            collection,
-            objectId: op.get(params, 'objectId'),
-        },
-        options,
-    );
-
-    const contentObj = serialize(restored);
-
-    // update type to restore the slug
-    const type = new Actinium.Object('Type');
-    type.id = typeObj.objectId;
-    await type.fetch(masterOptions);
-    type.addUnique('slugs', op.get(contentObj, 'slug'));
-    await type.save(null, masterOptions);
-
-    // restore all revisions
-    const revisions = _.chain(Object.values(op.get(contentObj, 'branches', {})))
-        .pluck('history')
-        .flatten()
-        .uniq()
-        .value()
-        .map(objectId => {
-            const rev = new Actinium.Object('Recycle');
-            rev.id = objectId;
-            rev.set('type', 'revision');
-            rev.set('object.objectId', contentObj.objectId);
-            return rev;
-        });
-
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection,
-            userId,
-            changeType: ENUMS.CHANGES.RESTORED,
-            meta: {
-                uuid: op.get(contentObj, 'uuid'),
-                slug: op.get(contentObj, 'slug'),
-                type: op.get(typeObj, 'type'),
-                originalId: op.get(params, 'objectId'),
-                branch: op.get(
-                    contentObj,
-                    ['branches', op.get(contentObj, 'history.branch')],
-                    {},
-                ),
-                history: op.get(contentObj, 'history'),
+        // restore master record
+        const restored = await Actinium.Recycle.restore(
+            {
+                collection,
+                objectId: op.get(params, 'objectId'),
             },
-        },
-        masterOptions,
-    );
+            options,
+        );
 
-    await Actinium.Object.saveAll(revisions, masterOptions);
+        const contentObj = serialize(restored);
+
+        // update type to restore the slug
+        const type = new Actinium.Object('Type');
+        type.id = typeObj.objectId;
+        await type.fetch(masterOptions);
+        type.addUnique('slugs', op.get(contentObj, 'slug'));
+        await type.save(null, masterOptions);
+
+        // restore all revisions
+        const revisions = _.chain(
+            Object.values(op.get(contentObj, 'branches', {})),
+        )
+            .pluck('history')
+            .flatten()
+            .uniq()
+            .value()
+            .map((objectId) => {
+                const rev = new Actinium.Object('Recycle');
+                rev.id = objectId;
+                rev.set('type', 'revision');
+                rev.set('object.objectId', contentObj.objectId);
+                return rev;
+            });
+
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection,
+                userId,
+                changeType: ENUMS.CHANGES.RESTORED,
+                meta: {
+                    uuid: op.get(contentObj, 'uuid'),
+                    slug: op.get(contentObj, 'slug'),
+                    type: op.get(typeObj, 'type'),
+                    originalId: op.get(params, 'objectId'),
+                    branch: op.get(
+                        contentObj,
+                        ['branches', op.get(contentObj, 'history.branch')],
+                        {},
+                    ),
+                    history: op.get(contentObj, 'history'),
+                },
+            },
+            masterOptions,
+        );
+
+        await Actinium.Object.saveAll(revisions, masterOptions);
+
+        /**
+         * @api {Hook} content-restored content-restored
+         * @apiGroup Hooks
+         * @apiName content-restored
+         * @apiParam {Object} contentObj The content marked trash
+         * @apiParam {Object} typeObj The type of the content
+         * @apiParam {Object} params The request.params object
+         * @apiParam {Object} options The options object
+         * @apiDescription Called after `Content.restore()`
+         */
+        await Actinium.Hook.run(
+            'content-restored',
+            contentObj,
+            typeObj,
+            params,
+            options,
+        );
+
+        return contentObj;
+    };
 
     /**
-     * @api {Hook} content-restored content-restored
-     * @apiGroup Hooks
-     * @apiName content-restored
-     * @apiParam {Object} contentObj The content marked trash
-     * @apiParam {Object} typeObj The type of the content
-     * @apiParam {Object} params The request.params object
-     * @apiParam {Object} options The options object
-     * @apiDescription Called after `Content.restore()`
+     * @api {Asynchronous} Content.publish(params,options) Content.publish()
+     * @apiDescription Set revision to current version and publish content.
+     * @apiParam {Object} params parameters for content
+     * @apiParam {Object} options Parse Query options (controls access)
+     * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
+     * @apiParam (params) {String} [slug] The unique slug for the content.
+     * @apiParam (params) {String} [objectId] The Parse object id of the content.
+     * @apiParam (params) {String} [uuid] The uuid of the content.
+     * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
+     * @apiParam (params) {String} [userId] User objectId that published the content.
+     * @apiParam (params) {String} [reason] Cause of publish action, default ENUMS.CHANGES.PUBLISHED
+     * @apiParam (type) {String} [objectId] Parse objectId of content type
+     * @apiParam (type) {String} [uuid] UUID of content type
+     * @apiParam (type) {String} [machineName] the machine name of the existing content type
+     * @apiParam (history) {String} [branch=master] the revision branch of current content
+     * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
+     * @apiName Content.publish
+     * @apiGroup Actinium
      */
-    await Actinium.Hook.run(
-        'content-restored',
-        contentObj,
-        typeObj,
-        params,
-        options,
-    );
+    Content.publish = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
 
-    return contentObj;
-};
+        const contentObj = await Content.setCurrent(params, options);
+        if (!contentObj) throw 'Unable to find content';
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
+        const collection = op.get(typeObj, 'collection');
+        const content = new Actinium.Object(collection);
+        content.id = contentObj.objectId;
+        content.set('status', ENUMS.STATUS.PUBLISHED);
+        op.set(contentObj, 'status', ENUMS.STATUS.PUBLISHED);
 
-/**
- * @api {Asynchronous} Content.publish(params,options) Content.publish()
- * @apiDescription Set revision to current version and publish content.
- * @apiParam {Object} params parameters for content
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam (params) {String} [slug] The unique slug for the content.
- * @apiParam (params) {String} [objectId] The Parse object id of the content.
- * @apiParam (params) {String} [uuid] The uuid of the content.
- * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
- * @apiParam (params) {String} [userId] User objectId that published the content.
- * @apiParam (params) {String} [reason] Cause of publish action, default ENUMS.CHANGES.PUBLISHED
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiParam (history) {String} [branch=master] the revision branch of current content
- * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
- * @apiName Content.publish
- * @apiGroup Actinium
- */
-Content.publish = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
 
-    const contentObj = await Content.setCurrent(params, options);
-    if (!contentObj) throw 'Unable to find content';
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-    const collection = op.get(typeObj, 'collection');
-    const content = new Actinium.Object(collection);
-    content.id = contentObj.objectId;
-    content.set('status', ENUMS.STATUS.PUBLISHED);
-    op.set(contentObj, 'status', ENUMS.STATUS.PUBLISHED);
+        await Actinium.Hook.run(
+            'content-before-save',
+            contentObj,
+            typeObj,
+            false,
+            params,
+            options,
+        );
 
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
+        await content.save(null, options);
 
-    await Actinium.Hook.run(
-        'content-before-save',
-        contentObj,
-        typeObj,
-        false,
-        params,
-        options,
-    );
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
 
-    await content.save(null, options);
-
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
-
-    const changeType = op.get(params, 'reason', ENUMS.CHANGES.PUBLISHED);
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection,
-            userId,
-            changeType,
-            meta: {
-                uuid: op.get(contentObj, 'uuid'),
-                slug: op.get(contentObj, 'slug'),
-                type: op.get(typeObj, 'type'),
-                branch: op.get(
-                    contentObj,
-                    ['branches', op.get(contentObj, 'history.branch')],
-                    {},
-                ),
-                history: op.get(contentObj, 'history'),
+        const changeType = op.get(params, 'reason', ENUMS.CHANGES.PUBLISHED);
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection,
+                userId,
+                changeType,
+                meta: {
+                    uuid: op.get(contentObj, 'uuid'),
+                    slug: op.get(contentObj, 'slug'),
+                    type: op.get(typeObj, 'type'),
+                    branch: op.get(
+                        contentObj,
+                        ['branches', op.get(contentObj, 'history.branch')],
+                        {},
+                    ),
+                    history: op.get(contentObj, 'history'),
+                },
             },
-        },
-        masterOptions,
-    );
+            masterOptions,
+        );
+
+        /**
+         * @api {Hook} content-published content-published
+         * @apiDescription Called after `Content.publish()`
+         * @apiParam {Object} contentObj the published content object
+         * @apiParam {Object} typeObj the type of the content
+         * @apiName content-published
+         * @apiGroup Hooks
+         */
+        await Actinium.Hook.run('content-published', contentObj, typeObj);
+        return contentObj;
+    };
 
     /**
-     * @api {Hook} content-published content-published
-     * @apiDescription Called after `Content.publish()`
-     * @apiParam {Object} contentObj the published content object
-     * @apiParam {Object} typeObj the type of the content
-     * @apiName content-published
-     * @apiGroup Hooks
+     * @api {Asynchronous} Content.setStatus(params,options) Content.setStatus()
+     * @apiDescription Set revision to current version and set the status of the content.
+     * @apiParam {Object} params parameters for content
+     * @apiParam {Object} options Parse Query options (controls access)
+     * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
+     * @apiParam (params) {String} [slug] The unique slug for the content.
+     * @apiParam (params) {String} [objectId] The Parse object id of the content.
+     * @apiParam (params) {String} [uuid] The uuid of the content.
+     * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
+     * @apiParam (params) {String} [userId] User objectId that set the status of the content.
+     * @apiParam (params) {String} [reason] Change log change reason. Cause of setStatus action, default ENUMS.CHANGES.SET_STATUS
+     * @apiParam (type) {String} [objectId] Parse objectId of content type
+     * @apiParam (type) {String} [uuid] UUID of content type
+     * @apiParam (type) {String} [machineName] the machine name of the existing content type
+     * @apiParam (history) {String} [branch=master] the revision branch of current content
+     * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
+     * @apiName Content.setStatus
+     * @apiGroup Actinium
      */
-    await Actinium.Hook.run('content-published', contentObj, typeObj);
-    return contentObj;
-};
+    Content.setStatus = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
 
-/**
- * @api {Asynchronous} Content.setStatus(params,options) Content.setStatus()
- * @apiDescription Set revision to current version and set the status of the content.
- * @apiParam {Object} params parameters for content
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam (params) {String} [slug] The unique slug for the content.
- * @apiParam (params) {String} [objectId] The Parse object id of the content.
- * @apiParam (params) {String} [uuid] The uuid of the content.
- * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
- * @apiParam (params) {String} [userId] User objectId that set the status of the content.
- * @apiParam (params) {String} [reason] Change log change reason. Cause of setStatus action, default ENUMS.CHANGES.SET_STATUS
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiParam (history) {String} [branch=master] the revision branch of current content
- * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
- * @apiName Content.setStatus
- * @apiGroup Actinium
- */
-Content.setStatus = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Content.setCurrent(params, options);
+        if (!contentObj) throw 'Unable to find content';
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
 
-    const contentObj = await Content.setCurrent(params, options);
-    if (!contentObj) throw 'Unable to find content';
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
+        const currentStatus = op.get(contentObj, 'status');
+        const statuses = _.chain(
+            op
+                .get(
+                    typeObj,
+                    'fields.publisher.statuses',
+                    'TRASH,DRAFT,PUBLISHED',
+                )
+                .split(',')
+                .concat(Object.values(ENUMS.STATUS)),
+        )
+            .uniq()
+            .compact()
+            .value();
 
-    const currentStatus = op.get(contentObj, 'status');
-    const statuses = _.chain(
-        op
-            .get(typeObj, 'fields.publisher.statuses', 'TRASH,DRAFT,PUBLISHED')
-            .split(',')
-            .concat(Object.values(ENUMS.STATUS)),
-    )
-        .uniq()
-        .compact()
-        .value();
+        const status = op.get(params, 'status');
+        if (!status) throw 'status parameter required';
+        if (!statuses.includes(status)) throw 'Invalid status.';
 
-    const status = op.get(params, 'status');
-    if (!status) throw 'status parameter required';
-    if (!statuses.includes(status)) throw 'Invalid status.';
+        // no change in status
+        if (status === currentStatus) return contentObj;
 
-    // no change in status
-    if (status === currentStatus) return contentObj;
+        // publish and unpublish are reserved
+        if (status === ENUMS.STATUS.PUBLISHED)
+            throw 'Use Content.publish() or content-publish cloud functions to publish content.';
+        if (currentStatus === ENUMS.STATUS.PUBLISHED)
+            throw 'Use Content.unpublish() or content-unpublish cloud functions to unpublish content.';
 
-    // publish and unpublish are reserved
-    if (status === ENUMS.STATUS.PUBLISHED)
-        throw 'Use Content.publish() or content-publish cloud functions to publish content.';
-    if (currentStatus === ENUMS.STATUS.PUBLISHED)
-        throw 'Use Content.unpublish() or content-unpublish cloud functions to unpublish content.';
+        const collection = op.get(typeObj, 'collection');
+        const content = new Actinium.Object(collection);
+        content.id = contentObj.objectId;
+        content.set('status', status);
+        op.set(contentObj, 'status', status);
 
-    const collection = op.get(typeObj, 'collection');
-    const content = new Actinium.Object(collection);
-    content.id = contentObj.objectId;
-    content.set('status', status);
-    op.set(contentObj, 'status', status);
+        await Actinium.Hook.run(
+            'before-content-status-changed',
+            content,
+            typeObj,
+            status,
+            currentStatus,
+        );
 
-    await Actinium.Hook.run(
-        'before-content-status-changed',
-        content,
-        typeObj,
-        status,
-        currentStatus,
-    );
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
 
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
+        await content.save(null, options);
 
-    await content.save(null, options);
-
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
-    const changeType = op.get(params, 'reason', ENUMS.CHANGES.SET_STATUS);
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection,
-            userId,
-            changeType,
-            meta: {
-                uuid: op.get(contentObj, 'uuid'),
-                slug: op.get(contentObj, 'slug'),
-                type: op.get(typeObj, 'type'),
-                branch: op.get(
-                    contentObj,
-                    ['branches', op.get(contentObj, 'history.branch')],
-                    {},
-                ),
-                history: op.get(contentObj, 'history'),
-                status,
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
+        const changeType = op.get(params, 'reason', ENUMS.CHANGES.SET_STATUS);
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection,
+                userId,
+                changeType,
+                meta: {
+                    uuid: op.get(contentObj, 'uuid'),
+                    slug: op.get(contentObj, 'slug'),
+                    type: op.get(typeObj, 'type'),
+                    branch: op.get(
+                        contentObj,
+                        ['branches', op.get(contentObj, 'history.branch')],
+                        {},
+                    ),
+                    history: op.get(contentObj, 'history'),
+                    status,
+                },
             },
-        },
-        masterOptions,
-    );
+            masterOptions,
+        );
 
-    /**
+        /**
      * @api {Hook} content-status-changed content-status-changed
      * @apiDescription Hook called before return of `Content.setStatus()`.
      Useful for responding to changes of content status.
@@ -2699,88 +2787,91 @@ Content.setStatus = async (params, options) => {
      * @apiName content-status-changed
      * @apiGroup Hooks
      */
-    await Actinium.Hook.run(
-        'content-status-changed',
-        contentObj,
-        typeObj,
-        status,
-        currentStatus,
-    );
-    return contentObj;
-};
-
-/**
- * @api {Asynchronous} Content.unpublish(params,options) Content.unpublish()
- * @apiDescription Unpublish current version of content.
- * @apiParam {Object} params parameters for content
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam (params) {String} [slug] The unique slug for the content.
- * @apiParam (params) {String} [objectId] The Parse object id of the content.
- * @apiParam (params) {String} [uuid] The uuid of the content.
- * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
- * @apiParam (params) {String} [userId] User objectId that unpublished the content.
- * @apiParam (params) {String} [reason] Cause of unpublish action, default ENUMS.CHANGES.UNPUBLISH
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiParam (history) {String} [branch=master] the revision branch of current content
- * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
- * @apiName Content.unpublish
- * @apiGroup Actinium
- */
-Content.unpublish = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(
-        {
-            ...params,
-            current: true,
-        },
-        options,
-    );
-
-    if (!contentObj) throw 'Unable to find content';
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-
-    const collection = op.get(typeObj, 'collection');
-    const content = new Actinium.Object(collection);
-    content.id = contentObj.objectId;
-    content.set('status', ENUMS.STATUS.DRAFT);
-    op.set(contentObj, 'status', ENUMS.STATUS.DRAFT);
-
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
-
-    await content.save(null, options);
-
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
-    const changeType = op.get(params, 'reason', ENUMS.CHANGES.UNPUBLISHED);
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection,
-            userId,
-            changeType,
-            meta: {
-                uuid: op.get(contentObj, 'uuid'),
-                slug: op.get(contentObj, 'slug'),
-                type: op.get(typeObj, 'type'),
-            },
-        },
-        masterOptions,
-    );
+        await Actinium.Hook.run(
+            'content-status-changed',
+            contentObj,
+            typeObj,
+            status,
+            currentStatus,
+        );
+        return contentObj;
+    };
 
     /**
+     * @api {Asynchronous} Content.unpublish(params,options) Content.unpublish()
+     * @apiDescription Unpublish current version of content.
+     * @apiParam {Object} params parameters for content
+     * @apiParam {Object} options Parse Query options (controls access)
+     * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
+     * @apiParam (params) {String} [slug] The unique slug for the content.
+     * @apiParam (params) {String} [objectId] The Parse object id of the content.
+     * @apiParam (params) {String} [uuid] The uuid of the content.
+     * @apiParam (params) {Object} [history] revision history to retrieve, containing branch and revision index.
+     * @apiParam (params) {String} [userId] User objectId that unpublished the content.
+     * @apiParam (params) {String} [reason] Cause of unpublish action, default ENUMS.CHANGES.UNPUBLISH
+     * @apiParam (type) {String} [objectId] Parse objectId of content type
+     * @apiParam (type) {String} [uuid] UUID of content type
+     * @apiParam (type) {String} [machineName] the machine name of the existing content type
+     * @apiParam (history) {String} [branch=master] the revision branch of current content
+     * @apiParam (history) {Number} [revision] index in branch history to update (defaults to most recent in branch).
+     * @apiName Content.unpublish
+     * @apiGroup Actinium
+     */
+    Content.unpublish = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(
+            {
+                ...params,
+                current: true,
+            },
+            options,
+        );
+
+        if (!contentObj) throw 'Unable to find content';
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
+
+        const collection = op.get(typeObj, 'collection');
+        const content = new Actinium.Object(collection);
+        content.id = contentObj.objectId;
+        content.set('status', ENUMS.STATUS.DRAFT);
+        op.set(contentObj, 'status', ENUMS.STATUS.DRAFT);
+
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
+
+        await content.save(null, options);
+
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
+        const changeType = op.get(params, 'reason', ENUMS.CHANGES.UNPUBLISHED);
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection,
+                userId,
+                changeType,
+                meta: {
+                    uuid: op.get(contentObj, 'uuid'),
+                    slug: op.get(contentObj, 'slug'),
+                    type: op.get(typeObj, 'type'),
+                },
+            },
+            masterOptions,
+        );
+
+        /**
      * @api {Hook} content-unpublished content-unpublished
      * @apiDescription Hook called before return of `Content.unpublish()`.
      Useful for responding to unpublishing of content.
@@ -2789,11 +2880,11 @@ Content.unpublish = async (params, options) => {
      * @apiName content-unpublished
      * @apiGroup Hooks
      */
-    await Actinium.Hook.run('content-unpublished', contentObj, typeObj);
-    return contentObj;
-};
+        await Actinium.Hook.run('content-unpublished', contentObj, typeObj);
+        return contentObj;
+    };
 
-/**
+    /**
  * @api {Asynchronous} Content.schedule(params,options) Content.schedule()
  * @apiDescription Schedule the publishing / unpublishing of content. If `history` is provided, that revision will be
  made current and published on optional `sunrise`. On optional `sunset`, the current version of the content will be unpublished.
@@ -2827,266 +2918,279 @@ Actinium.Content.schedule({
   sunset: now.clone().add(2, 'month').format(),
 }, Actinium.Utils.MasterOptions());
  */
-Content.schedule = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(params, options);
+    Content.schedule = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(params, options);
 
-    if (!contentObj) throw 'Unable to find content';
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-    const collection = op.get(typeObj, 'collection');
+        if (!contentObj) throw 'Unable to find content';
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
+        const collection = op.get(typeObj, 'collection');
 
-    const revision = op.get(params, 'history.revision');
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
+        const revision = op.get(params, 'history.revision');
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
 
-    // new schedule
-    const sunriseISO = op.get(params, 'sunrise');
-    if (sunriseISO) {
-        const sunrise = moment(sunriseISO);
-        if (sunrise.format() !== sunriseISO)
-            throw 'Invalid sunrise provided. Valid ISO8601 + UTC offset such as 2020-02-07T11:15:04-05:00. Use moment >=v2.20.0 moment.format().';
-    }
+        // new schedule
+        const sunriseISO = op.get(params, 'sunrise');
+        if (sunriseISO) {
+            const sunrise = moment(sunriseISO);
+            if (sunrise.format() !== sunriseISO)
+                throw 'Invalid sunrise provided. Valid ISO8601 + UTC offset such as 2020-02-07T11:15:04-05:00. Use moment >=v2.20.0 moment.format().';
+        }
 
-    const sunsetISO = op.get(params, 'sunset');
-    if (sunsetISO) {
-        const sunset = moment(sunsetISO);
-        if (sunset.format() !== sunsetISO)
-            throw 'Invalid sunset provided. Valid ISO8601 + UTC offset such as 2020-02-07T11:15:04-05:00. Use moment >=v2.20.0 moment.format().';
-    }
+        const sunsetISO = op.get(params, 'sunset');
+        if (sunsetISO) {
+            const sunset = moment(sunsetISO);
+            if (sunset.format() !== sunsetISO)
+                throw 'Invalid sunset provided. Valid ISO8601 + UTC offset such as 2020-02-07T11:15:04-05:00. Use moment >=v2.20.0 moment.format().';
+        }
 
-    let publish = op.get(contentObj, 'publish', {}) || {};
-    const history = op.get(contentObj, 'history');
-    if (!revision) op.del(history, 'revision');
+        let publish = op.get(contentObj, 'publish', {}) || {};
+        const history = op.get(contentObj, 'history');
+        if (!revision) op.del(history, 'revision');
 
-    const pubId = uuidv4();
-    publish[pubId] = { sunrise: sunriseISO, sunset: sunsetISO, history };
-    if (userId) publish[pubId].userId = userId;
+        const pubId = uuidv4();
+        publish[pubId] = { sunrise: sunriseISO, sunset: sunsetISO, history };
+        if (userId) publish[pubId].userId = userId;
 
-    const content = new Actinium.Object(collection);
-    content.id = contentObj.objectId;
-    content.set('publish', publish);
+        const content = new Actinium.Object(collection);
+        content.id = contentObj.objectId;
+        content.set('publish', publish);
 
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
 
-    await content.save(null, options);
+        await content.save(null, options);
 
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection,
-            userId,
-            changeType: ENUMS.CHANGES.SCHEDULE,
-            meta: {
-                uuid: op.get(contentObj, 'uuid'),
-                slug: op.get(contentObj, 'slug'),
-                type: op.get(typeObj, 'type'),
-                branch: op.get(
-                    contentObj,
-                    ['branches', op.get(publish, [pubId, 'history', 'branch'])],
-                    {},
-                ),
-                publish: publish[pubId],
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection,
+                userId,
+                changeType: ENUMS.CHANGES.SCHEDULE,
+                meta: {
+                    uuid: op.get(contentObj, 'uuid'),
+                    slug: op.get(contentObj, 'slug'),
+                    type: op.get(typeObj, 'type'),
+                    branch: op.get(
+                        contentObj,
+                        [
+                            'branches',
+                            op.get(publish, [pubId, 'history', 'branch']),
+                        ],
+                        {},
+                    ),
+                    publish: publish[pubId],
+                },
             },
-        },
-        masterOptions,
-    );
+            masterOptions,
+        );
 
-    return serialize(content);
-};
+        return serialize(content);
+    };
 
-/**
- * @api {Asynchronous} Content.unschedule(params,options) Content.unschedule()
- * @apiDescription Remove scheduled publishing job by id.
- * @apiParam {Object} params parameters for content
- * @apiParam {Object} options Parse Query options (controls access)
- * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
- * @apiParam (params) {String} [slug] The unique slug for the content.
- * @apiParam (params) {String} [objectId] The Parse object id of the content.
- * @apiParam (params) {String} [uuid] The uuid of the content.
- * @apiParam (params) {String} jobId The id of the schedule job.
- * @apiParam (type) {String} [objectId] Parse objectId of content type
- * @apiParam (type) {String} [uuid] UUID of content type
- * @apiParam (type) {String} [machineName] the machine name of the existing content type
- * @apiName Content.unschedule
- * @apiGroup Actinium
- */
-Content.unschedule = async (params, options) => {
-    const masterOptions = Actinium.Utils.MasterOptions(options);
-    const contentObj = await Actinium.Content.retrieve(params, options);
+    /**
+     * @api {Asynchronous} Content.unschedule(params,options) Content.unschedule()
+     * @apiDescription Remove scheduled publishing job by id.
+     * @apiParam {Object} params parameters for content
+     * @apiParam {Object} options Parse Query options (controls access)
+     * @apiParam (params) {Object} type Type object, or at minimum the properties required `type-retrieve`
+     * @apiParam (params) {String} [slug] The unique slug for the content.
+     * @apiParam (params) {String} [objectId] The Parse object id of the content.
+     * @apiParam (params) {String} [uuid] The uuid of the content.
+     * @apiParam (params) {String} jobId The id of the schedule job.
+     * @apiParam (type) {String} [objectId] Parse objectId of content type
+     * @apiParam (type) {String} [uuid] UUID of content type
+     * @apiParam (type) {String} [machineName] the machine name of the existing content type
+     * @apiName Content.unschedule
+     * @apiGroup Actinium
+     */
+    Content.unschedule = async (params, options) => {
+        const masterOptions = Actinium.Utils.MasterOptions(options);
+        const contentObj = await Actinium.Content.retrieve(params, options);
 
-    if (!contentObj) throw 'Unable to find content';
-    const typeObj = await Actinium.Type.retrieve(params.type, masterOptions);
-    const publish = op.get(contentObj, 'publish', {}) || {};
-    const jobId = op.get(params, 'jobId');
-    const userId = op.get(
-        params,
-        'user.objectId',
-        op.get(params, 'user.id', op.get(params, 'userId')),
-    );
+        if (!contentObj) throw 'Unable to find content';
+        const typeObj = await Actinium.Type.retrieve(
+            params.type,
+            masterOptions,
+        );
+        const publish = op.get(contentObj, 'publish', {}) || {};
+        const jobId = op.get(params, 'jobId');
+        const userId = op.get(
+            params,
+            'user.objectId',
+            op.get(params, 'user.id', op.get(params, 'userId')),
+        );
 
-    if (!jobId) throw new Error('jobId missing');
-    if (!op.has(publish, jobId)) throw new Error('Invalid jobId');
+        if (!jobId) throw new Error('jobId missing');
+        if (!op.has(publish, jobId)) throw new Error('Invalid jobId');
 
-    op.del(publish, jobId);
+        op.del(publish, jobId);
 
-    const content = new Actinium.Object(typeObj.collection);
-    content.id = contentObj.objectId;
-    content.set('publish', publish);
+        const content = new Actinium.Object(typeObj.collection);
+        content.id = contentObj.objectId;
+        content.set('publish', publish);
 
-    await Actinium.Hook.run(
-        'content-before-save',
-        content,
-        typeObj,
-        false,
-        params,
-        options,
-    );
+        await Actinium.Hook.run(
+            'content-before-save',
+            content,
+            typeObj,
+            false,
+            params,
+            options,
+        );
 
-    await content.save(null, options);
+        await content.save(null, options);
 
-    await Actinium.Content.Log.add(
-        {
-            contentId: contentObj.objectId,
-            collection: typeObj.collection,
-            userId,
-            changeType: ENUMS.CHANGES.UNSCHEDULE,
-            meta: {
-                uuid: op.get(contentObj, 'uuid'),
-                slug: op.get(contentObj, 'slug'),
-                type: op.get(typeObj, 'type'),
-                publish,
+        await Actinium.Content.Log.add(
+            {
+                contentId: contentObj.objectId,
+                collection: typeObj.collection,
+                userId,
+                changeType: ENUMS.CHANGES.UNSCHEDULE,
+                meta: {
+                    uuid: op.get(contentObj, 'uuid'),
+                    slug: op.get(contentObj, 'slug'),
+                    type: op.get(typeObj, 'type'),
+                    publish,
+                },
             },
-        },
-        masterOptions,
-    );
+            masterOptions,
+        );
 
-    return serialize(content);
-};
+        return serialize(content);
+    };
 
-/**
+    /**
  * @api {Asynchronous} Content.publishScheduled() Content.publishScheduled()
  * @apiDescription Manually run content scheduler. Publishes or unpublishes any
  content that is scheduled.
  * @apiName Content.publishScheduled
  * @apiGroup Actinium
  */
-Content.publishScheduled = async () => {
-    const options = Actinium.Utils.MasterOptions();
-    const { types = [] } = await Actinium.Type.list({}, options);
+    Content.publishScheduled = async () => {
+        const options = Actinium.Utils.MasterOptions();
+        const { types = [] } = await Actinium.Type.list({}, options);
 
-    let logged = false;
+        let logged = false;
 
-    for (const type of types) {
-        const { collection } = type;
-        const query = new Parse.Query(collection);
-        query.notEqualTo('publish', undefined);
-        query.notEqualTo('publish', null);
+        for (const type of types) {
+            const { collection } = type;
+            const query = new Parse.Query(collection);
+            query.notEqualTo('publish', undefined);
+            query.notEqualTo('publish', null);
 
-        const items = await query.find(options);
+            const items = await query.find(options);
 
-        if (items.length > 0 && logged === false) {
-            if (logged === false) {
-                INFO(chalk.cyan('Content Scheduler:'));
-                logged = true;
+            if (items.length > 0 && logged === false) {
+                if (logged === false) {
+                    INFO(chalk.cyan('Content Scheduler:'));
+                    logged = true;
+                }
+                INFO(`(${items.length})` + chalk.cyan(` ${collection}:`));
             }
-            INFO(`(${items.length})` + chalk.cyan(` ${collection}:`));
-        }
 
-        const now = moment();
+            const now = moment();
 
-        for (const item of items) {
-            const publish = item.get('publish');
+            for (const item of items) {
+                const publish = item.get('publish');
 
-            let updated = false;
-            for (const [id, instructions] of Object.entries(publish)) {
-                const { sunrise, sunset, history, userId } = instructions;
+                let updated = false;
+                for (const [id, instructions] of Object.entries(publish)) {
+                    const { sunrise, sunset, history, userId } = instructions;
 
-                // sunrise
-                if (sunrise) {
-                    if (now.isAfter(moment(sunrise))) {
-                        INFO(' - ', chalk.cyan('Publishing'), item.get('slug'));
+                    // sunrise
+                    if (sunrise) {
+                        if (now.isAfter(moment(sunrise))) {
+                            INFO(
+                                ' - ',
+                                chalk.cyan('Publishing'),
+                                item.get('slug'),
+                            );
 
-                        await Actinium.Content.publish(
-                            {
-                                type,
-                                objectId: item.id,
-                                history,
-                                userId,
-                                reason: ENUMS.CHANGES.SCHEDULED_PUBLISH,
-                            },
-                            options,
-                        );
-                        op.del(publish, [id, 'sunrise']);
+                            await Actinium.Content.publish(
+                                {
+                                    type,
+                                    objectId: item.id,
+                                    history,
+                                    userId,
+                                    reason: ENUMS.CHANGES.SCHEDULED_PUBLISH,
+                                },
+                                options,
+                            );
+                            op.del(publish, [id, 'sunrise']);
+                            updated = true;
+                        }
+                    }
+
+                    if (sunset) {
+                        if (now.isAfter(moment(sunset))) {
+                            INFO(
+                                ' - ',
+                                chalk.cyan('Unpublishing'),
+                                item.get('slug'),
+                            );
+
+                            await Actinium.Content.unpublish(
+                                {
+                                    type,
+                                    objectId: item.id,
+                                    userId,
+                                    reason: ENUMS.CHANGES.SCHEDULED_UNPUBLISH,
+                                },
+                                options,
+                            );
+                            op.del(publish, [id, 'sunset']);
+                            updated = true;
+                        }
+                    }
+
+                    if (
+                        !op.get(publish, [id, 'sunrise']) &&
+                        !op.get(publish, [id, 'sunset'])
+                    ) {
+                        op.del(publish, [id]);
                         updated = true;
                     }
                 }
 
-                if (sunset) {
-                    if (now.isAfter(moment(sunset))) {
-                        INFO(
-                            ' - ',
-                            chalk.cyan('Unpublishing'),
-                            item.get('slug'),
-                        );
+                const remainingInstructions = Object.keys(publish);
+                if (updated || remainingInstructions.length < 1) {
+                    const obj = new Actinium.Object(collection);
+                    obj.id = item.id;
 
-                        await Actinium.Content.unpublish(
-                            {
-                                type,
-                                objectId: item.id,
-                                userId,
-                                reason: ENUMS.CHANGES.SCHEDULED_UNPUBLISH,
-                            },
-                            options,
-                        );
-                        op.del(publish, [id, 'sunset']);
-                        updated = true;
+                    // instructions remain
+                    if (remainingInstructions.length > 0) {
+                        obj.set('publish', publish);
                     }
-                }
-
-                if (
-                    !op.get(publish, [id, 'sunrise']) &&
-                    !op.get(publish, [id, 'sunset'])
-                ) {
-                    op.del(publish, [id]);
-                    updated = true;
+                    // no more publishing tasks
+                    else {
+                        obj.set('publish');
+                    }
+                    await obj.save(null, options);
                 }
             }
 
-            const remainingInstructions = Object.keys(publish);
-            if (updated || remainingInstructions.length < 1) {
-                const obj = new Actinium.Object(collection);
-                obj.id = item.id;
-
-                // instructions remain
-                if (remainingInstructions.length > 0) {
-                    obj.set('publish', publish);
-                }
-                // no more publishing tasks
-                else {
-                    obj.set('publish');
-                }
-                await obj.save(null, options);
+            if (items.length > 0) {
+                INFO(' - ', 'Done');
+                INFO('');
             }
         }
+    };
 
-        if (items.length > 0) {
-            INFO(' - ', 'Done');
-            INFO('');
-        }
-    }
-};
-
-/**
+    /**
  * @api {Asynchronous} Content.typeMaintenance() Content.typeMaintenance()
  * @apiDescription Manually run content maintenance. Primarily makes sure that
  the current content slugs are accounted for in the Type object, but also runs
@@ -3095,339 +3199,249 @@ Content.publishScheduled = async () => {
  * @apiName Content.typeMaintenance
  * @apiGroup Actinium
  */
-Content.typeMaintenance = async () => {
-    const options = Actinium.Utils.MasterOptions();
-    const { types = [] } = await Actinium.Type.list({}, options);
-    let logged = false;
-    for (const type of types) {
-        const { collection, slugs } = type;
-        const query = new Parse.Query(collection);
-        query.limit(1000);
-        query.skip(0);
+    Content.typeMaintenance = async () => {
+        const options = Actinium.Utils.MasterOptions();
+        const { types = [] } = await Actinium.Type.list({}, options);
+        let logged = false;
+        for (const type of types) {
+            const { collection, slugs } = type;
+            const query = new Parse.Query(collection);
+            query.limit(1000);
+            query.skip(0);
 
-        let results = await query.find(options);
-        const currentSlugs = [];
-        while (results.length > 0) {
-            results.forEach(result => currentSlugs.push(result.get('slug')));
-            query.skip(currentSlugs.length);
-            results = await query.find(options);
-        }
-
-        if (_.difference(slugs, currentSlugs).length > 0) {
-            if (logged === false) {
-                INFO(chalk.cyan('Content Type Maintenance:'));
-                logged = true;
+            let results = await query.find(options);
+            const currentSlugs = [];
+            while (results.length > 0) {
+                results.forEach((result) =>
+                    currentSlugs.push(result.get('slug')),
+                );
+                query.skip(currentSlugs.length);
+                results = await query.find(options);
             }
 
-            const typeLabel = op.get(type, 'meta.label', op.get(type, 'type'));
-            INFO(` - Cleanup ${typeLabel} slugs`);
-            const typeObj = new Actinium.Object('Type');
-            typeObj.id = type.objectId;
-            typeObj.set('slugs', currentSlugs);
-            typeObj.save(null, options);
+            if (_.difference(slugs, currentSlugs).length > 0) {
+                if (logged === false) {
+                    INFO(chalk.cyan('Content Type Maintenance:'));
+                    logged = true;
+                }
+
+                const typeLabel = op.get(
+                    type,
+                    'meta.label',
+                    op.get(type, 'type'),
+                );
+                INFO(` - Cleanup ${typeLabel} slugs`);
+                const typeObj = new Actinium.Object('Type');
+                typeObj.id = type.objectId;
+                typeObj.set('slugs', currentSlugs);
+                typeObj.save(null, options);
+            }
+
+            /**
+             * @api {Hook} type-maintenance type-maintenance
+             * @apiDescription Hook called on each scheduled Pulse type-maintenance job.
+             * Useful for regular jobs that must be run on content types or their content.
+             * @apiParam {Object} typeObj the type object of the content
+             * @apiName type-maintenance
+             * @apiGroup Hooks
+             */
+            await Actinium.Hook.run('type-maintenance', type);
+        }
+        if (logged === true) {
+            INFO('');
+        }
+    };
+
+    Content.User.list = async (params, options) => {
+        if (!op.get(params, 'user')) {
+            return new Error('user is a required parameter');
         }
 
-        /**
-         * @api {Hook} type-maintenance type-maintenance
-         * @apiDescription Hook called on each scheduled Pulse type-maintenance job.
-         * Useful for regular jobs that must be run on content types or their content.
-         * @apiParam {Object} typeObj the type object of the content
-         * @apiName type-maintenance
-         * @apiGroup Hooks
-         */
-        await Actinium.Hook.run('type-maintenance', type);
-    }
-    if (logged === true) {
-        INFO('');
-    }
-};
+        const indexBy = op.get(params, 'indexBy', 'typeID');
+        const content = await Content.listAll(params, options);
 
-Content.User.list = async (params, options) => {
-    if (!op.get(params, 'user')) {
-        return new Error('user is a required parameter');
-    }
+        const output = {};
+        Object.entries(content).forEach(([typeID, items]) => {
+            const newItems = Object.values(items).map((item) => ({
+                collection: `Content_${item.type.machineName}`,
+                contentID: item.objectId,
+                machineName: item.type.machineName,
+                slug: item.slug,
+                status: item.status,
+                title: item.title,
+                typeID,
+                type: item.type,
+                updatedAt: item.updatedAt,
+                url: `/admin/content/${item.type.machineName}`,
+            }));
 
-    const indexBy = op.get(params, 'indexBy', 'typeID');
-    const content = await Content.listAll(params, options);
+            const key =
+                indexBy === 'typeID' ? typeID : op.get(content, indexBy);
+            op.set(output, key, _.indexBy(newItems, indexBy));
+        });
 
-    const output = {};
-    Object.entries(content).forEach(([typeID, items]) => {
-        const newItems = Object.values(items).map(item => ({
-            collection: `Content_${item.type.machineName}`,
-            contentID: item.objectId,
-            machineName: item.type.machineName,
-            slug: item.slug,
-            status: item.status,
-            title: item.title,
-            typeID,
-            type: item.type,
-            updatedAt: item.updatedAt,
-            url: `/admin/content/${item.type.machineName}`,
-        }));
+        return output;
+    };
 
-        const key = indexBy === 'typeID' ? typeID : op.get(content, indexBy);
-        op.set(output, key, _.indexBy(newItems, indexBy));
-    });
+    Content.registerActivity = (activityType) => {
+        Actinium.Hook.register(
+            activityType,
+            async (contentObj, typeObj, isNew) => {
+                let newFlag = typeof isNew === 'boolean' ? isNew : false;
 
-    return output;
-};
+                await Actinium.Hook.run(
+                    'content-activity',
+                    activityType,
+                    contentObj,
+                    typeObj,
+                    newFlag,
+                );
+            },
+        );
+    };
 
-Actinium.Harness.test(
-    'Content.create()',
-    async assert => {
-        const createParams = {
+    Actinium.Harness.test(
+        'Content.create()',
+        async (assert) => {
+            const createParams = {
+                type: {
+                    machineName: 'test_content',
+                },
+                slug: 'a-test-content',
+                title: 'A Title',
+                display_title: 'My happy title',
+                body_text: {
+                    text: 'Some body text',
+                },
+                something_else: 'foo',
+            };
+
+            let content = await Actinium.Content.create(
+                createParams,
+                Actinium.Utils.MasterOptions(),
+            );
+
+            assert.equal(content.slug, createParams.slug, 'Slug should match');
+            assert.equal(
+                content.title,
+                createParams.title,
+                'Title should match',
+            );
+            assert.equal(
+                content.display_title,
+                createParams.display_title,
+                'Display Title should match',
+            );
+            assert.deepEqual(
+                content.body_text,
+                createParams.body_text,
+                'Body object should match',
+            );
+            assert.notEqual(
+                content.something_else,
+                createParams.something_else,
+                'something_else field should be ignored.',
+            );
+        },
+        // Setup
+        async () => {
+            const options = Actinium.Utils.MasterOptions();
+            let collection;
+            try {
+                const type = await Actinium.Type.retrieve(
+                    { machineName: 'test_content' },
+                    options,
+                );
+                const typeObj = new Actinium.Object('Type');
+                typeObj.id = type.objectId;
+                typeObj.fetch(options);
+                typeObj.set('slugs', []);
+                typeObj.save(null, options);
+
+                collection = type.collection;
+            } catch (error) {}
+
+            try {
+                if (!collection) {
+                    await Actinium.Type.create(
+                        {
+                            type: 'Test Content',
+                            fields: {
+                                '07b5a9a3-0a77-4925-8642-07549715d5bb': {
+                                    fieldId:
+                                        '07b5a9a3-0a77-4925-8642-07549715d5bb',
+                                    fieldType: 'Text',
+                                    fieldName: 'Display Title',
+                                    defaultValue: null,
+                                    pattern: null,
+                                    helpText: null,
+                                    region: 'default',
+                                },
+                                'f9f9b96f-1fcd-44b7-bd34-576ca5c79470': {
+                                    fieldId:
+                                        'f9f9b96f-1fcd-44b7-bd34-576ca5c79470',
+                                    fieldType: 'RichText',
+                                    fieldName: 'Body Text',
+                                    helpText: null,
+                                    region: 'efde4c06-9e3f-40b3-b098-2a1d3e6275cc',
+                                },
+                            },
+                            regions: {
+                                default: {
+                                    id: 'default',
+                                    label: 'Header',
+                                    slug: 'header',
+                                },
+                                'efde4c06-9e3f-40b3-b098-2a1d3e6275cc': {
+                                    id: 'efde4c06-9e3f-40b3-b098-2a1d3e6275cc',
+                                    label: 'Body',
+                                    slug: 'body',
+                                },
+                            },
+                        },
+                        options,
+                    );
+                    await new Promise((resolve) => setTimeout(resolve, 250));
+                }
+            } catch (error) {
+                ERROR('setup error', error);
+            }
+        },
+    );
+
+    Actinium.Harness.test('Content.update()', async (assert) => {
+        const updateParams = {
+            // query
+            title: 'Title Update',
             type: {
                 machineName: 'test_content',
             },
             slug: 'a-test-content',
-            title: 'A Title',
-            display_title: 'My happy title',
+
             body_text: {
-                text: 'Some body text',
+                text: 'Updated',
             },
-            something_else: 'foo',
         };
 
-        let content = await Actinium.Content.create(
-            createParams,
+        let content = await Actinium.Content.update(
+            updateParams,
             Actinium.Utils.MasterOptions(),
         );
 
-        assert.equal(content.slug, createParams.slug, 'Slug should match');
-        assert.equal(content.title, createParams.title, 'Title should match');
-        assert.equal(
-            content.display_title,
-            createParams.display_title,
-            'Display Title should match',
-        );
+        assert.equal(content.title, updateParams.title, 'Title should match');
         assert.deepEqual(
             content.body_text,
-            createParams.body_text,
+            updateParams.body_text,
             'Body object should match',
         );
-        assert.notEqual(
-            content.something_else,
-            createParams.something_else,
-            'something_else field should be ignored.',
+        assert.equal(
+            op.get(content, 'branches.master.history.length'),
+            2,
+            'Should have 2 revisions in master.',
         );
-    },
-    // Setup
-    async () => {
-        const options = Actinium.Utils.MasterOptions();
-        let collection;
-        try {
-            const type = await Actinium.Type.retrieve(
-                { machineName: 'test_content' },
-                options,
-            );
-            const typeObj = new Actinium.Object('Type');
-            typeObj.id = type.objectId;
-            typeObj.fetch(options);
-            typeObj.set('slugs', []);
-            typeObj.save(null, options);
-
-            collection = type.collection;
-        } catch (error) {}
-
-        try {
-            if (!collection) {
-                await Actinium.Type.create(
-                    {
-                        type: 'Test Content',
-                        fields: {
-                            '07b5a9a3-0a77-4925-8642-07549715d5bb': {
-                                fieldId: '07b5a9a3-0a77-4925-8642-07549715d5bb',
-                                fieldType: 'Text',
-                                fieldName: 'Display Title',
-                                defaultValue: null,
-                                pattern: null,
-                                helpText: null,
-                                region: 'default',
-                            },
-                            'f9f9b96f-1fcd-44b7-bd34-576ca5c79470': {
-                                fieldId: 'f9f9b96f-1fcd-44b7-bd34-576ca5c79470',
-                                fieldType: 'RichText',
-                                fieldName: 'Body Text',
-                                helpText: null,
-                                region: 'efde4c06-9e3f-40b3-b098-2a1d3e6275cc',
-                            },
-                        },
-                        regions: {
-                            default: {
-                                id: 'default',
-                                label: 'Header',
-                                slug: 'header',
-                            },
-                            'efde4c06-9e3f-40b3-b098-2a1d3e6275cc': {
-                                id: 'efde4c06-9e3f-40b3-b098-2a1d3e6275cc',
-                                label: 'Body',
-                                slug: 'body',
-                            },
-                        },
-                    },
-                    options,
-                );
-                await new Promise(resolve => setTimeout(resolve, 250));
-            }
-        } catch (error) {
-            ERROR('setup error', error);
-        }
-    },
-);
-
-Actinium.Harness.test('Content.update()', async assert => {
-    const updateParams = {
-        // query
-        title: 'Title Update',
-        type: {
-            machineName: 'test_content',
-        },
-        slug: 'a-test-content',
-
-        body_text: {
-            text: 'Updated',
-        },
-    };
-
-    let content = await Actinium.Content.update(
-        updateParams,
-        Actinium.Utils.MasterOptions(),
-    );
-
-    assert.equal(content.title, updateParams.title, 'Title should match');
-    assert.deepEqual(
-        content.body_text,
-        updateParams.body_text,
-        'Body object should match',
-    );
-    assert.equal(
-        op.get(content, 'branches.master.history.length'),
-        2,
-        'Should have 2 revisions in master.',
-    );
-});
-
-Actinium.Harness.test('Content.setCurrent()', async assert => {
-    const params = {
-        // query
-        type: {
-            machineName: 'test_content',
-        },
-        slug: 'a-test-content',
-    };
-
-    let current = await Actinium.Content.retrieve(
-        {
-            ...params,
-            current: true,
-        },
-        Actinium.Utils.MasterOptions(),
-    );
-
-    assert.equal(
-        op.get(current, 'history.branch'),
-        'master',
-        'Should be master branch',
-    );
-
-    assert.equal(
-        op.get(current, 'history.revision'),
-        0,
-        'Should be first revision',
-    );
-
-    assert.deepEqual(op.get(current, 'body_text'), {
-        text: 'Some body text',
     });
 
-    await Actinium.Content.setCurrent(params, Actinium.Utils.MasterOptions());
-
-    current = await Actinium.Content.retrieve(
-        {
-            ...params,
-            current: true,
-        },
-        Actinium.Utils.MasterOptions(),
-    );
-
-    assert.equal(
-        op.get(current, 'history.branch'),
-        'master',
-        'Should be master branch',
-    );
-
-    assert.equal(
-        op.get(current, 'history.revision'),
-        1,
-        'Should be second revision',
-    );
-
-    assert.deepEqual(op.get(current, 'body_text'), {
-        text: 'Updated',
-    });
-});
-
-Actinium.Harness.test('Content.publish()', async assert => {
-    const params = {
-        // query
-        type: {
-            machineName: 'test_content',
-        },
-        slug: 'a-test-content',
-        history: { branch: 'master', revision: 0 },
-    };
-
-    await Actinium.Content.publish(params, Actinium.Utils.MasterOptions());
-
-    let current = await Actinium.Content.retrieve(
-        {
-            ...params,
-            current: true,
-        },
-        Actinium.Utils.MasterOptions(),
-    );
-
-    assert.equal(
-        op.get(current, 'history.branch'),
-        'master',
-        'Should be master branch',
-    );
-
-    assert.equal(
-        op.get(current, 'history.revision'),
-        0,
-        'Should be second revision',
-    );
-
-    assert.deepEqual(op.get(current, 'body_text'), {
-        text: 'Some body text',
-    });
-
-    assert.equal(op.get(current, 'status'), ENUMS.STATUS.PUBLISHED);
-});
-
-Actinium.Harness.test('Content.unpublish()', async assert => {
-    const params = {
-        // query
-        type: {
-            machineName: 'test_content',
-        },
-        slug: 'a-test-content',
-    };
-
-    await Actinium.Content.unpublish(params, Actinium.Utils.MasterOptions());
-
-    let current = await Actinium.Content.retrieve(
-        params,
-        Actinium.Utils.MasterOptions(),
-    );
-
-    assert.equal(op.get(current, 'status'), ENUMS.STATUS.DRAFT);
-});
-
-Actinium.Harness.test(
-    'Content.delete() and Content.restore()',
-    async assert => {
+    Actinium.Harness.test('Content.setCurrent()', async (assert) => {
         const params = {
             // query
             type: {
@@ -3436,114 +3450,236 @@ Actinium.Harness.test(
             slug: 'a-test-content',
         };
 
-        const type = await Actinium.Type.retrieve(
-            params.type,
+        let current = await Actinium.Content.retrieve(
+            {
+                ...params,
+                current: true,
+            },
             Actinium.Utils.MasterOptions(),
         );
-        const { collection } = type;
 
-        let content = await Actinium.Content.retrieve(
+        assert.equal(
+            op.get(current, 'history.branch'),
+            'master',
+            'Should be master branch',
+        );
+
+        assert.equal(
+            op.get(current, 'history.revision'),
+            0,
+            'Should be first revision',
+        );
+
+        assert.deepEqual(op.get(current, 'body_text'), {
+            text: 'Some body text',
+        });
+
+        await Actinium.Content.setCurrent(
             params,
             Actinium.Utils.MasterOptions(),
         );
 
-        const recycle = await Actinium.Content.delete(
+        current = await Actinium.Content.retrieve(
+            {
+                ...params,
+                current: true,
+            },
+            Actinium.Utils.MasterOptions(),
+        );
+
+        assert.equal(
+            op.get(current, 'history.branch'),
+            'master',
+            'Should be master branch',
+        );
+
+        assert.equal(
+            op.get(current, 'history.revision'),
+            1,
+            'Should be second revision',
+        );
+
+        assert.deepEqual(op.get(current, 'body_text'), {
+            text: 'Updated',
+        });
+    });
+
+    Actinium.Harness.test('Content.publish()', async (assert) => {
+        const params = {
+            // query
+            type: {
+                machineName: 'test_content',
+            },
+            slug: 'a-test-content',
+            history: { branch: 'master', revision: 0 },
+        };
+
+        await Actinium.Content.publish(params, Actinium.Utils.MasterOptions());
+
+        let current = await Actinium.Content.retrieve(
+            {
+                ...params,
+                current: true,
+            },
+            Actinium.Utils.MasterOptions(),
+        );
+
+        assert.equal(
+            op.get(current, 'history.branch'),
+            'master',
+            'Should be master branch',
+        );
+
+        assert.equal(
+            op.get(current, 'history.revision'),
+            0,
+            'Should be second revision',
+        );
+
+        assert.deepEqual(op.get(current, 'body_text'), {
+            text: 'Some body text',
+        });
+
+        assert.equal(op.get(current, 'status'), ENUMS.STATUS.PUBLISHED);
+    });
+
+    Actinium.Harness.test('Content.unpublish()', async (assert) => {
+        const params = {
+            // query
+            type: {
+                machineName: 'test_content',
+            },
+            slug: 'a-test-content',
+        };
+
+        await Actinium.Content.unpublish(
             params,
             Actinium.Utils.MasterOptions(),
         );
-        const objectId = op.get(recycle.get('object'), 'objectId');
 
-        const trashedQuery = new Parse.Query('Recycle');
-        trashedQuery.equalTo('collection', collection);
-        trashedQuery.equalTo('object.objectId', objectId);
-
-        const trashed = await trashedQuery.find(Actinium.Utils.MasterOptions());
-
-        assert.equal(trashed.length, 2, 'Main item and 1 revisions.');
-        assert.ok(trashed.find(trash => trash.get('type') === 'delete'));
-
-        await Actinium.Content.restore(content, Actinium.Utils.MasterOptions());
-
-        const revisionQuery = new Parse.Query('Recycle');
-        revisionQuery.equalTo('collection', collection);
-        revisionQuery.equalTo('object.slug', 'a-test-content');
-        const recycled = await revisionQuery.find(
+        let current = await Actinium.Content.retrieve(
+            params,
             Actinium.Utils.MasterOptions(),
         );
-        const revisions = recycled.filter(
-            revision => revision.get('type') === 'revision',
-        );
-        assert.equal(revisions.length, 1, '1 revision');
-    },
-);
 
-Actinium.Harness.test(
-    'Content Teardown',
-    async () => {},
-    null,
-    // Teardown
-    async () => {
-        try {
-            const options = Actinium.Utils.MasterOptions();
-            const { objectId, collection } = await Actinium.Type.retrieve(
-                { machineName: 'test_content' },
-                options,
-            );
+        assert.equal(op.get(current, 'status'), ENUMS.STATUS.DRAFT);
+    });
 
-            // destroy all items in test_content collection
-            const contentQuery = new Parse.Query(collection);
-            let items = await contentQuery.find(options);
-            await Actinium.Object.destroyAll(items, options);
-
-            // destroy/archive Type
-            await Actinium.Type.delete(
-                {
+    Actinium.Harness.test(
+        'Content.delete() and Content.restore()',
+        async (assert) => {
+            const params = {
+                // query
+                type: {
                     machineName: 'test_content',
                 },
-                options,
+                slug: 'a-test-content',
+            };
+
+            const type = await Actinium.Type.retrieve(
+                params.type,
+                Actinium.Utils.MasterOptions(),
+            );
+            const { collection } = type;
+
+            let content = await Actinium.Content.retrieve(
+                params,
+                Actinium.Utils.MasterOptions(),
             );
 
-            // delete test_content schema
-            const ParseSchema = new Parse.Schema(collection);
-            const schema = await ParseSchema.get(options);
-            if (schema) await ParseSchema.delete(options);
+            const recycle = await Actinium.Content.delete(
+                params,
+                Actinium.Utils.MasterOptions(),
+            );
+            const objectId = op.get(recycle.get('object'), 'objectId');
 
-            // delete revisions
-            let recycleQuery = new Parse.Query('Recycle');
-            recycleQuery.equalTo('collection', collection);
-            items = await recycleQuery.find(options);
-            await Actinium.Object.destroyAll(items, options);
+            const trashedQuery = new Parse.Query('Recycle');
+            trashedQuery.equalTo('collection', collection);
+            trashedQuery.equalTo('object.objectId', objectId);
 
-            // delete archived Type
-            recycleQuery = new Parse.Query('Recycle');
-            recycleQuery.equalTo('collection', 'Type');
-            recycleQuery.equalTo('object.objectId', objectId);
-            items = await recycleQuery.find(options);
-            await Actinium.Object.destroyAll(items, options);
+            const trashed = await trashedQuery.find(
+                Actinium.Utils.MasterOptions(),
+            );
 
-            // destroy changelog
-            const clQuery = new Parse.Query('Changelog');
-            clQuery.equalTo('collection', collection);
-            const logs = await clQuery.find(options);
-            await Actinium.Object.destroyAll(logs, options);
-        } catch (error) {
-            ERROR('teardown error', error);
-        }
-    },
-);
+            assert.equal(trashed.length, 2, 'Main item and 1 revisions.');
+            assert.ok(trashed.find((trash) => trash.get('type') === 'delete'));
 
-Content.registerActivity = activityType => {
-    Actinium.Hook.register(activityType, async (contentObj, typeObj, isNew) => {
-        let newFlag = typeof isNew === 'boolean' ? isNew : false;
+            await Actinium.Content.restore(
+                content,
+                Actinium.Utils.MasterOptions(),
+            );
 
-        await Actinium.Hook.run(
-            'content-activity',
-            activityType,
-            contentObj,
-            typeObj,
-            newFlag,
-        );
-    });
+            const revisionQuery = new Parse.Query('Recycle');
+            revisionQuery.equalTo('collection', collection);
+            revisionQuery.equalTo('object.slug', 'a-test-content');
+            const recycled = await revisionQuery.find(
+                Actinium.Utils.MasterOptions(),
+            );
+            const revisions = recycled.filter(
+                (revision) => revision.get('type') === 'revision',
+            );
+            assert.equal(revisions.length, 1, '1 revision');
+        },
+    );
+
+    Actinium.Harness.test(
+        'Content Teardown',
+        async () => {},
+        null,
+        // Teardown
+        async () => {
+            try {
+                const options = Actinium.Utils.MasterOptions();
+                const { objectId, collection } = await Actinium.Type.retrieve(
+                    { machineName: 'test_content' },
+                    options,
+                );
+
+                // destroy all items in test_content collection
+                const contentQuery = new Parse.Query(collection);
+                let items = await contentQuery.find(options);
+                await Actinium.Object.destroyAll(items, options);
+
+                // destroy/archive Type
+                await Actinium.Type.delete(
+                    {
+                        machineName: 'test_content',
+                    },
+                    options,
+                );
+
+                // delete test_content schema
+                const ParseSchema = new Parse.Schema(collection);
+                const schema = await ParseSchema.get(options);
+                if (schema) await ParseSchema.delete(options);
+
+                // delete revisions
+                let recycleQuery = new Parse.Query('Recycle');
+                recycleQuery.equalTo('collection', collection);
+                items = await recycleQuery.find(options);
+                await Actinium.Object.destroyAll(items, options);
+
+                // delete archived Type
+                recycleQuery = new Parse.Query('Recycle');
+                recycleQuery.equalTo('collection', 'Type');
+                recycleQuery.equalTo('object.objectId', objectId);
+                items = await recycleQuery.find(options);
+                await Actinium.Object.destroyAll(items, options);
+
+                // destroy changelog
+                const clQuery = new Parse.Query('Changelog');
+                clQuery.equalTo('collection', collection);
+                const logs = await clQuery.find(options);
+                await Actinium.Object.destroyAll(logs, options);
+            } catch (error) {
+                ERROR('teardown error', error);
+            }
+        },
+    );
+
+    Actinium.Content = Content;
+
+    return Actinium.Content;
 };
 
-module.exports = Content;
+export default MOD();

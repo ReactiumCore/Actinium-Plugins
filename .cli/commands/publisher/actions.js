@@ -1,11 +1,8 @@
-const copy = require('clipboardy');
-const pkg = require('../../../package');
+import copy from 'clipboardy';
 
 const { chalk, fs, op, path } = arcli;
 
 const normalize = (...p) => path.normalize(path.join(process.cwd(), ...p));
-
-const src = (...p) => normalize('.core', 'plugin', ...p);
 
 const dest = (...p) => normalize('actinium_modules', '@atomic-reactor', ...p);
 
@@ -33,7 +30,7 @@ let mem = {
     plugins: [],
 };
 
-module.exports = () => ({
+export default () => ({
     init: () => {
         console.log('');
         console.log(`Publishing ${chalk.magenta('Actinium Core')} plugins...`);
@@ -59,7 +56,7 @@ module.exports = () => ({
             const pkgFilePath = dest(dir, 'package.json');
             if (!fs.existsSync(pkgFilePath)) return obj;
 
-            const { version = 'latest' } = require(pkgFilePath);
+            const { version = 'latest' } = fs.readJsonSync(pkgFilePath);
             const name = `@atomic-reactor/${dir}`;
             obj[name] = version;
 

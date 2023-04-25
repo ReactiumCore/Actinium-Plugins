@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     CACHE: 90 * 1000,
     CRON_SETTING: 'publish-frequency',
     STATUS: {

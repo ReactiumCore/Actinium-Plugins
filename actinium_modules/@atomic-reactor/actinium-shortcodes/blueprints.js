@@ -1,4 +1,4 @@
-module.exports = [
+export default [
     {
         ID: 'shortcodes',
         description: 'Shortcodes Blueprint',

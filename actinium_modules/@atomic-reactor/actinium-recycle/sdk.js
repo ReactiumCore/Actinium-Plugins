@@ -1,153 +1,162 @@
-const _ = require('underscore');
-const ENUMS = require('./enums');
-const op = require('object-path');
+import _ from 'underscore';
+import ENUMS from './enums.js';
+import op from 'object-path';
+
 const COLLECTION = ENUMS.COLLECTION;
 
-const create = ({ type = 'delete', collection, object, user }, options) => {
-    if (!collection) return new Error('collection is a required parameter');
-    if (!object) return new Error('object is a required parameter');
+const MOD = () => {
+    const create = ({ type = 'delete', collection, object, user }, options) => {
+        if (!collection) return new Error('collection is a required parameter');
+        if (!object) return new Error('object is a required parameter');
 
-    if (typeof object.toJSON === 'function') object = object.toJSON();
+        if (typeof object.toJSON === 'function') object = object.toJSON();
 
-    let ACL = op.get(object, 'ACL', {});
-    if (ACL && !(ACL instanceof Actinium.ACL)) ACL = new Actinium.ACL(ACL);
+        let ACL = op.get(object, 'ACL', {});
+        if (ACL && !(ACL instanceof Actinium.ACL)) ACL = new Actinium.ACL(ACL);
 
-    return new Actinium.Object(COLLECTION).save(
-        { ACL, type, collection, object, user },
-        options,
-    );
-};
-
-const purge = async (params, options) => {
-    const { results = [] } = await retrieve(params, options);
-    const objs = results.map(({ objectId }) =>
-        new Actinium.Object(COLLECTION).set('objectId', objectId),
-    );
-    return Actinium.Object.destroyAll(objs);
-};
-
-const restore = async (params, options) => {
-    let items = op.get(params, 'items');
-
-    if (!items) {
-        const list = await retrieve(params, options);
-        items = op.get(list, 'results', []);
-    }
-
-    if (items.length < 1) return;
-
-    const { collection, object } = items[0];
-
-    if (!collection || !object) return;
-
-    delete object.objectId;
-    if (op.get(object, 'ACL')) {
-        object.ACL = new Actinium.ACL(object.ACL);
-    }
-
-    Object.entries(object).forEach(([key, value]) => {
-        // restore pointer
-        if (
-            typeof value === 'object' &&
-            'className' in value &&
-            'objectId' in value
-        ) {
-            object[key].__type = 'Pointer';
-        }
-    });
-
-    return new Actinium.Object(collection).save(object, options);
-};
-
-const restoreAll = async (params, options) => {
-    const { results = [] } = await retrieveAll(params, options);
-
-    if (results.length < 1) return [];
-
-    return Promise.all(
-        results.map(item => restore({ items: [item] }, options)),
-    );
-};
-
-const retrieveAll = async (params = {}, options) => {
-    let results = [];
-    let page = op.get(params, 'page', 1);
-
-    let list = await retrieve(params, options);
-    const { pages } = list;
-
-    results = results.concat(list.results);
-
-    while (page < pages) {
-        page += 1;
-        op.set(params, 'page', page);
-        list = await retrieve(params, options);
-        results = results.concat(list.results);
-    }
-
-    return { count: results.length, page: 1, pages: 1, results };
-};
-
-const retrieve = async (params, options) => {
-    const page = Math.max(op.get(params, 'page', 1), 1);
-    const limit = Math.min(op.get(params, 'limit', 1000), 1000);
-    const skip = page * limit - limit;
-    const qry = new Actinium.Query(COLLECTION).descending('createdAt');
-
-    if (op.has(params, 'type')) {
-        qry.containedIn('type', _.flatten([params.type]));
-    }
-
-    if (op.has(params, 'collection')) {
-        qry.containedIn('collection', _.flatten([params.collection]));
-    }
-
-    if (op.has(params, 'objectId')) {
-        qry.equalTo('object.objectId', params.objectId);
-    }
-
-    /**
-     * @api {Hook} recycle-query recycle-query
-     * @apiGroup Hooks
-     * @apiName recycle-query
-     * @apiParam {Query} query The Actinium.Query object
-     * @apiParam {Object} params The request.params object
-     * @apiParam {Object} options The options object
-     * @apiDescription Triggered before the query is executed as a result of calling the Actinium.Recycle.retrieve function.
-     */
-    await Actinium.Hook.run('recycle-query', qry, params, options);
-
-    const count = await qry.count(options);
-    const pages = Math.ceil(count / limit);
-    const next = page + 1 <= pages ? page + 1 : null;
-    const prev = page - 1 > 0 && page <= pages ? page - 1 : null;
-
-    const results = await qry
-        .limit(limit)
-        .skip(skip)
-        .find(options);
-
-    return {
-        count,
-        next,
-        page,
-        pages,
-        prev,
-        results: results.map(item => item.toJSON()),
+        return new Actinium.Object(COLLECTION).save(
+            { ACL, type, collection, object, user },
+            options,
+        );
     };
+
+    const purge = async (params, options) => {
+        const { results = [] } = await retrieve(params, options);
+        const objs = results.map(({ objectId }) =>
+            new Actinium.Object(COLLECTION).set('objectId', objectId),
+        );
+        return Actinium.Object.destroyAll(objs);
+    };
+
+    const restore = async (params, options) => {
+        let items = op.get(params, 'items');
+
+        if (!items) {
+            const list = await retrieve(params, options);
+            items = op.get(list, 'results', []);
+        }
+
+        if (items.length < 1) return;
+
+        const { collection, object } = items[0];
+
+        if (!collection || !object) return;
+
+        delete object.objectId;
+        if (op.get(object, 'ACL')) {
+            object.ACL = new Actinium.ACL(object.ACL);
+        }
+
+        Object.entries(object).forEach(([key, value]) => {
+            // restore pointer
+            if (
+                typeof value === 'object' &&
+                'className' in value &&
+                'objectId' in value
+            ) {
+                object[key].__type = 'Pointer';
+            }
+        });
+
+        return new Actinium.Object(collection).save(object, options);
+    };
+
+    const restoreAll = async (params, options) => {
+        const { results = [] } = await retrieveAll(params, options);
+
+        if (results.length < 1) return [];
+
+        return Promise.all(
+            results.map((item) => restore({ items: [item] }, options)),
+        );
+    };
+
+    const retrieveAll = async (params = {}, options) => {
+        let results = [];
+        let page = op.get(params, 'page', 1);
+
+        let list = await retrieve(params, options);
+        const { pages } = list;
+
+        results = results.concat(list.results);
+
+        while (page < pages) {
+            page += 1;
+            op.set(params, 'page', page);
+            list = await retrieve(params, options);
+            results = results.concat(list.results);
+        }
+
+        return { count: results.length, page: 1, pages: 1, results };
+    };
+
+    const retrieve = async (params, options) => {
+        const page = Math.max(op.get(params, 'page', 1), 1);
+        const limit = Math.min(op.get(params, 'limit', 1000), 1000);
+        const skip = page * limit - limit;
+        const qry = new Actinium.Query(COLLECTION).descending('createdAt');
+
+        if (op.has(params, 'type')) {
+            qry.containedIn('type', _.flatten([params.type]));
+        }
+
+        if (op.has(params, 'collection')) {
+            qry.containedIn('collection', _.flatten([params.collection]));
+        }
+
+        if (op.has(params, 'objectId')) {
+            qry.equalTo('object.objectId', params.objectId);
+        }
+
+        /**
+         * @api {Hook} recycle-query recycle-query
+         * @apiGroup Hooks
+         * @apiName recycle-query
+         * @apiParam {Query} query The Actinium.Query object
+         * @apiParam {Object} params The request.params object
+         * @apiParam {Object} options The options object
+         * @apiDescription Triggered before the query is executed as a result of calling the Actinium.Recycle.retrieve function.
+         */
+        await Actinium.Hook.run('recycle-query', qry, params, options);
+
+        const count = await qry.count(options);
+        const pages = Math.ceil(count / limit);
+        const next = page + 1 <= pages ? page + 1 : null;
+        const prev = page - 1 > 0 && page <= pages ? page - 1 : null;
+
+        const results = await qry.limit(limit).skip(skip).find(options);
+
+        return {
+            count,
+            next,
+            page,
+            pages,
+            prev,
+            results: results.map((item) => item.toJSON()),
+        };
+    };
+
+    const Recycle = {
+        ...ENUMS,
+        purge,
+        restore,
+        restoreAll,
+        retrieve,
+        retrieveAll,
+    };
+
+    Recycle.archive = (params, options) =>
+        create({ type: 'archive', ...params }, options);
+
+    Recycle.revision = (params, options) =>
+        create({ type: 'revision', ...params }, options);
+
+    Recycle.trash = create;
+
+    return Recycle;
 };
 
-const Recycle = { ...ENUMS, purge, restore, restoreAll, retrieve, retrieveAll };
-
-Recycle.archive = (params, options) =>
-    create({ type: 'archive', ...params }, options);
-
-Recycle.revision = (params, options) =>
-    create({ type: 'revision', ...params }, options);
-
-Recycle.trash = create;
-
-module.exports = Recycle;
+export default MOD();
 
 /**
  * @api {Asynchronus} Actinium.Recycle Recycle

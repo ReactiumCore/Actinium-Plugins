@@ -23,8 +23,8 @@
     "url": "",
     "version": "0.0.0",
     "filename": ".core/middleware/docs/content/main.js",
-    "group": "/Development/Atomic Reactor/Actinium Plugins/.core/middleware/docs/content/main.js",
-    "groupTitle": "/Development/Atomic Reactor/Actinium Plugins/.core/middleware/docs/content/main.js",
+    "group": "/home/john/dev/atomic-reactor/Actinium/.core/middleware/docs/content/main.js",
+    "groupTitle": "/home/john/dev/atomic-reactor/Actinium/.core/middleware/docs/content/main.js",
     "name": ""
   },
   {
@@ -333,6 +333,13 @@
     },
     "name": "CloudACL",
     "group": "Actinium",
+    "examples": [
+      {
+        "title": "Example Usage",
+        "content": "        \nActinium.Cloud.define(PLUGIN.ID, 'save-high-score', async req => {\n    const { params, user } = req;\n    const { scoreValue } = params;\n    const options = CloudRunOptions(req);\n    const score = new Actinium.Object('Score');\n\n    score.set('high', scoreValue);\n\n    // create ACL for current user, and any user with role that\n    // has the 'read-score' and 'write-score' capabilities\n    const groupACL = await Actinium.Utils.CloudACL(\n            [\n                {\n                    permission: 'read',\n                    type: 'public',\n                    allow: true,\n                },\n                {\n                    permission: 'read',\n                    type: 'user',\n                    allow: true,\n                    objectId: user.id,\n                },\n                {\n                    permission: 'write',\n                    type: 'user',\n                    allow: true,\n                    objectId: user.id,\n                },\n            ],\n            'read-score', // any role with read-score capability\n            'write-score', // any role with write-score capability\n            score.getACL(),\n        );\n\n        score.setACL(groupACL);\n\n    return score.save(null, options);\n});",
+        "type": "json"
+      }
+    ],
     "version": "0.0.0",
     "filename": ".core/lib/utils/acl.js",
     "groupTitle": "Actinium"
@@ -502,7 +509,7 @@
     "name": "Content.Log.add",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -594,7 +601,7 @@
     "name": "Content.Log.list",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -669,7 +676,7 @@
     "name": "Content.changeSlug",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Actinium"
   },
   {
@@ -760,7 +767,7 @@
     "name": "Content.changeSlug",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -844,7 +851,7 @@
     "name": "Content.clone",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -960,7 +967,7 @@
     "name": "Content.cloneBranch",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1082,7 +1089,7 @@
     "name": "Content.create",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1128,7 +1135,7 @@
     "name": "Content.createBranch",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1212,7 +1219,7 @@
     "name": "Content.delete",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1321,7 +1328,7 @@
     "name": "Content.deleteBranch",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1352,7 +1359,7 @@
     "name": "Content.diff",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1398,7 +1405,7 @@
     "name": "Content.getVersion",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1514,7 +1521,7 @@
     "name": "Content.labelBranch",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1675,7 +1682,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1713,7 +1720,7 @@
     "name": "Content.masterCopyProps",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1835,7 +1842,7 @@
     "name": "Content.publish",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1846,7 +1853,7 @@
     "name": "Content.publishScheduled",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -1916,7 +1923,7 @@
     "name": "Content.restore",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -2040,7 +2047,7 @@
     "name": "Content.retrieve",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -2149,7 +2156,7 @@
     "name": "Content.revision",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -2189,7 +2196,7 @@
     "name": "Content.sanitize",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -2318,7 +2325,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -2433,7 +2440,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -2554,7 +2561,7 @@
     "name": "Content.setPermissions",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -2676,7 +2683,7 @@
     "name": "Content.setStatus",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -2784,7 +2791,7 @@
     "name": "Content.trash",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Actinium"
   },
   {
@@ -2892,7 +2899,7 @@
     "name": "Content.trash",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -2903,7 +2910,7 @@
     "name": "Content.typeMaintenance",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -3011,7 +3018,7 @@
     "name": "Content.unpublish",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Actinium"
   },
   {
@@ -3133,7 +3140,7 @@
     "name": "Content.unpublish",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -3208,7 +3215,7 @@
     "name": "Content.unschedule",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Actinium"
   },
   {
@@ -3299,7 +3306,7 @@
     "name": "Content.unschedule",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -3421,7 +3428,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4085,7 +4092,7 @@
     "group": "Actinium",
     "name": "Media",
     "description": "<p>Utilities for managing the <code>Media</code> collection.</p>",
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4096,7 +4103,7 @@
     "group": "Actinium",
     "name": "Media.Image",
     "description": "<p>Under the hood, Actinium uses <a href=\"Sharp\">https://sharp.pixelplumbing.com</a> a Node.js image processing library. You can use the API however you like in your own application.</p>",
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4142,7 +4149,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4180,7 +4187,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4218,7 +4225,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4278,7 +4285,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4324,7 +4331,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4355,7 +4362,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4414,7 +4421,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4487,7 +4494,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4505,7 +4512,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4557,7 +4564,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4642,7 +4649,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -4765,7 +4772,7 @@
     "group": "Actinium",
     "version": "3.0.3",
     "description": "<p>Set of functions to interact with the User collection.</p>",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium",
     "name": "ObjectActiniumUser"
   },
@@ -5529,7 +5536,7 @@
     "name": "Recycle",
     "group": "Actinium",
     "description": "<p>Recycle allows you to temporarily store a <code>Actinium.Object</code> and is useful for archiving and creating revisions of collection data.</p>",
-    "filename": ".core/plugin/recycle/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -5588,7 +5595,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -5647,7 +5654,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -5699,7 +5706,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -5774,7 +5781,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -5833,7 +5840,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -5892,7 +5899,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -6445,7 +6452,7 @@
     "name": "Search.index",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/search/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-search/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -6508,7 +6515,7 @@
       }
     },
     "version": "0.0.0",
-    "filename": ".core/plugin/search/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-search/sdk.js",
     "groupTitle": "Actinium"
   },
   {
@@ -6519,7 +6526,7 @@
     "name": "Setting",
     "group": "Actinium",
     "description": "<p>Manage application setting key/value pairs. Actinium settings are provided to you can manage your running configuration for your application. By default, each setting is securely stored so that only users that should have access to a setting are permitted to set, get, or delete settings on the site.</p> <p>The following capabilities can be assigned to your roles for settings:</p> <table> <thead> <tr> <th>Capability</th> <th>Default Roles</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td>Setting.create</td> <td>administrator,super-admin</td> <td>Ability to create a new setting.</td> </tr> <tr> <td>Setting.retrieve</td> <td>administrator,super-admin</td> <td>Ability to retrieve any/all settings.</td> </tr> <tr> <td>Setting.update</td> <td>administrator,super-admin</td> <td>Ability to edit any existing setting.</td> </tr> <tr> <td>Setting.delete</td> <td>administrator,super-admin</td> <td>Ability to delete any existing setting.</td> </tr> <tr> <td>setting.${group}-get</td> <td>administrator,super-admin</td> <td>Ability to retrieve the setting with <code>group</code> setting group. e.g. setting.foo-get to allow get of setting group <code>foo</code></td> </tr> <tr> <td>setting.${group}-set</td> <td>administrator,super-admin</td> <td>Ability to edit the setting with <code>group</code> setting group. e.g. setting.foo-set to allow edit of setting group <code>foo</code></td> </tr> <tr> <td>setting.${group}-delete</td> <td>administrator,super-admin</td> <td>Ability to delete the setting with <code>group</code> setting group. e.g. setting.foo-delete to allow delete of setting group <code>foo</code></td> </tr> </tbody> </table>",
-    "filename": ".core/plugin/settings/settings-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-settings/settings-plugin.js",
     "groupTitle": "Actinium"
   },
   {
@@ -6643,7 +6650,7 @@
     "name": "Syndicate.Client.create",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Create a content syndication client record, which includes a refresh token for issuing new access tokens.</p>",
     "parameter": {
@@ -6702,7 +6709,7 @@
     "name": "Syndicate.Client.delete",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Delete one syndication client record by objectId</p>",
     "parameter": {
@@ -6725,7 +6732,7 @@
     "name": "Syndicate.Client.list",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>List syndication clients</p>",
     "parameter": {
@@ -6836,7 +6843,7 @@
     "name": "Syndicate.Client.retrieve",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Retrieve one syndication client record by objectId</p>",
     "parameter": {
@@ -6859,7 +6866,7 @@
     "name": "Syndicate.Client.token",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Retrieve a new access token for a client, for use with other syndication REST calls.</p>",
     "parameter": {
@@ -6904,7 +6911,7 @@
     "name": "Syndicate.Client.token",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Verify an access token (See if it is expired)</p>",
     "parameter": {
@@ -6949,7 +6956,7 @@
     "name": "Syndicate.Content.list",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Get list of syndicated list</p>"
   },
@@ -6960,7 +6967,7 @@
     "name": "Syndicate.Content.media",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Get syndicated list of media</p>"
   },
@@ -6971,7 +6978,7 @@
     "name": "Syndicate.Content.mediaDirectories",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Get list of media directories</p>"
   },
@@ -6982,7 +6989,7 @@
     "name": "Syndicate.Content.taxonomies",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Get syndicated list of taxonomies</p>"
   },
@@ -6993,7 +7000,7 @@
     "name": "Syndicate.Content.taxonomiesAttached",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Get attached taxononmies for an item of syndicated content.</p>"
   },
@@ -7004,7 +7011,7 @@
     "name": "Syndicate.Content.taxonomyTypes",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Get syndicated list of taxonomy types</p>"
   },
@@ -7015,7 +7022,7 @@
     "name": "Syndicate.Content.types",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate/sdk.js",
     "groupTitle": "Actinium",
     "description": "<p>Get list of syndicated types</p>"
   },
@@ -7107,7 +7114,7 @@
     "name": "Type.create",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/sdk.js",
+    "filename": ".core/lib/type/index.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7145,7 +7152,7 @@
     "name": "Type.delete",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/sdk.js",
+    "filename": ".core/lib/type/index.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7213,7 +7220,7 @@
     "name": "Type.getCollection",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/sdk.js",
+    "filename": ".core/lib/type/index.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7237,7 +7244,7 @@
       }
     },
     "version": "0.0.0",
-    "filename": ".core/plugin/type/sdk.js",
+    "filename": ".core/lib/type/index.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7326,7 +7333,7 @@
     "name": "Type.register",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/sdk.js",
+    "filename": ".core/lib/type/index.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7401,7 +7408,7 @@
     "name": "Type.retrieve",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/sdk.js",
+    "filename": ".core/lib/type/index.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7448,7 +7455,7 @@
     "name": "Type.status",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/sdk.js",
+    "filename": ".core/lib/type/index.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7553,7 +7560,7 @@
     "name": "Type.update",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/sdk.js",
+    "filename": ".core/lib/type/index.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7644,7 +7651,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7728,7 +7735,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7819,7 +7826,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7903,7 +7910,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7942,7 +7949,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium"
   },
   {
@@ -7953,7 +7960,7 @@
     "name": "User.init",
     "description": "<p>Create the initial <code>Parse.User</code> object as a Super Admin if there are no users found in the User collection.</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium"
   },
   {
@@ -8123,7 +8130,7 @@
             "type": "Hook",
             "optional": false,
             "field": "user-list-query",
-            "description": "<p>Mutate the <code>Parse.Query</code> object.</p> <pre class=\"prettyprint\">Arguments: query:Parse.Query, params, options </code></pre>"
+            "description": "<p>Mutate the <code>Actinium.Query</code> object.</p> <pre class=\"prettyprint\">Arguments: query:Actinium.Query, params, options </code></pre>"
           },
           {
             "group": "hooks",
@@ -8136,7 +8143,7 @@
       }
     },
     "version": "0.0.0",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium"
   },
   {
@@ -8206,7 +8213,7 @@
       }
     },
     "version": "0.0.0",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium"
   },
   {
@@ -8283,7 +8290,7 @@
       }
     },
     "version": "0.0.0",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium"
   },
   {
@@ -8339,7 +8346,7 @@
       }
     },
     "version": "0.0.0",
-    "filename": ".core/plugin/users/sdk.js",
+    "filename": ".core/lib/user.js",
     "groupTitle": "Actinium"
   },
   {
@@ -8639,7 +8646,7 @@
     "name": "changelog",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/changelog-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/changelog-plugin.js",
     "groupTitle": "Actinium"
   },
   {
@@ -8770,7 +8777,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Actinium"
   },
   {
@@ -8862,7 +8869,7 @@
     "name": "content-publish",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Actinium"
   },
   {
@@ -8968,7 +8975,25 @@
     "name": "content-set-status",
     "group": "Actinium",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
+    "groupTitle": "Actinium"
+  },
+  {
+    "type": "Function",
+    "url": "Utils.isSDK(feature,feature2,feature3)",
+    "title": "Utils.isSDK()",
+    "name": "isSDK",
+    "group": "Actinium",
+    "description": "<p>Check for specific Actinium SDK features. When the first argument is an array, each item in the array is checked and must be present on the Actinium SDK for a valid response.</p> <p>Returns Boolean.</p>",
+    "examples": [
+      {
+        "title": "Example",
+        "content": "if (Actinium.Utils.isSDK('Recycle')) {\n  // Recycle something\n}\n\nif (Actinium.Utils.isSDK('Recycle', 'User')) {\n  // Recycle a User\n}\n\nif (Actinium.Utils.isSDK(['Recycle', 'User'])) {\n  // Recycle a User\n}\n\nif (Actinium.Utils.isSDK(['Recycle', 'User'], 'Media')) {\n  // Recycle a User and some Media\n}",
+        "type": "json"
+      }
+    ],
+    "version": "0.0.0",
+    "filename": ".core/lib/utils/isSDK.js",
     "groupTitle": "Actinium"
   },
   {
@@ -9623,7 +9648,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/users/users-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-users/users-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -9641,7 +9666,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/blueprint/blueprint-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-blueprint/blueprint-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -9701,7 +9726,7 @@
         ]
       }
     },
-    "filename": ".core/plugin/capability/capability-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-capability/capability-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -9760,7 +9785,7 @@
         ]
       }
     },
-    "filename": ".core/plugin/capability/capability-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-capability/capability-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -9798,7 +9823,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/capability/capability-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-capability/capability-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -9829,7 +9854,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/capability/capability-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-capability/capability-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -9875,7 +9900,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/capability/capability-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-capability/capability-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -9913,7 +9938,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/capability/capability-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-capability/capability-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -9951,7 +9976,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/capability/capability-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-capability/capability-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -9989,7 +10014,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/capability/capability-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-capability/capability-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10027,7 +10052,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/capability/capability-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-capability/capability-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10127,7 +10152,7 @@
     "name": "content-clone-branch",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10219,7 +10244,7 @@
     "name": "content-create",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10287,7 +10312,7 @@
     "name": "content-delete",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10380,7 +10405,7 @@
     "name": "content-delete-branch",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10480,7 +10505,7 @@
     "name": "content-label-branch",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10585,7 +10610,7 @@
     "name": "content-permissions",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10639,7 +10664,7 @@
     "name": "content-restore",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10747,7 +10772,7 @@
     "name": "content-retrieve",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10840,7 +10865,7 @@
     "name": "content-revisions",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -10953,7 +10978,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11052,7 +11077,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11151,7 +11176,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11189,7 +11214,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11220,7 +11245,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11273,7 +11298,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11332,7 +11357,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11363,7 +11388,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11416,7 +11441,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11468,7 +11493,7 @@
         ]
       }
     },
-    "filename": ".core/plugin/media/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11520,7 +11545,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11591,7 +11616,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/media/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-media/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11747,7 +11772,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/recycle-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/recycle-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11792,7 +11817,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/recycle-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/recycle-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11839,7 +11864,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/recycle-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/recycle-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11884,7 +11909,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/recycle-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/recycle-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11922,7 +11947,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/recycle-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/recycle-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -11967,7 +11992,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/recycle-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/recycle-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12014,7 +12039,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/recycle-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/recycle-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12061,7 +12086,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/recycle/recycle-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/recycle-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12097,7 +12122,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/roles/roles-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-roles/roles-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12128,7 +12153,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/roles/roles-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-roles/roles-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12175,7 +12200,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/route/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-route/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12215,7 +12240,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/route/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-route/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12253,7 +12278,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/route/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-route/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12284,7 +12309,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/route/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-route/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12337,7 +12362,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/route/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-route/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12384,7 +12409,7 @@
     "name": "search",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/search/search-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-search/search-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12408,7 +12433,7 @@
     },
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/search/search-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-search/search-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12434,7 +12459,7 @@
     },
     "permission": [
       {
-        "name": "`Setting.retrieve` or `setting.${key}-get` capabilities."
+        "name": "`Setting.retrieve` or `setting.${key}-get` capabilities. e.g. If your top-level key is site, the `setting.site-get` capability with grant a role the ability to read this setting. Note that sub-keys, such as `site.hostname` will use the top-level `setting.site-get` capability."
       }
     ],
     "examples": [
@@ -12444,7 +12469,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/settings/settings-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-settings/settings-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12474,27 +12499,27 @@
           },
           {
             "group": "Parameter",
-            "type": "Boolean",
+            "type": "Object",
             "optional": true,
             "field": "permissions",
-            "description": "<p>List of permissions to be applied to the setting.</p>"
+            "description": "<p>List of permissions to be applied to the setting. See <a href=\"#api-Actinium-CloudACL\">CloudACL</a> helper for more information.</p>"
           }
         ]
       }
     },
     "permission": [
       {
-        "name": "`Setting.create`, `Setting.update` or `setting.${key}-set` capabilities."
+        "name": "`Setting.create`, `Setting.update` or `setting.${key}-set` capabilities. e.g. If you wish to allow a role to modify the `site` setting (or `site.hostname`), you would give that role the `setting.site-set` capability."
       }
     ],
     "examples": [
       {
         "title": "Example Usage:",
-        "content": "Actinium.Cloud.run('setting-set', { key: 'site', value: {title: 'My Site', hostname: 'mysite.com'}, public: true});",
+        "content": "// Create a publicly readable site setting object\nActinium.Cloud.run('setting-set', { key: 'site', value: {title: 'My Site', hostname: 'mysite.com'}, permissions: [\n        {\n            permission: 'read',\n            type: 'public',\n            allow: true,\n        },\n        {\n            permission: 'write',\n            type: 'public',\n            allow: false,\n        },\n\n]});",
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/settings/settings-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-settings/settings-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12530,7 +12555,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/settings/settings-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-settings/settings-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12553,7 +12578,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/settings/settings-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-settings/settings-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12569,7 +12594,7 @@
     "group": "Cloud",
     "name": "syndicate-satellite-sync",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate-client/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate-client/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12585,7 +12610,7 @@
     "group": "Cloud",
     "name": "syndicate-satellite-sync-reset",
     "version": "0.0.0",
-    "filename": ".core/plugin/syndicate-client/plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-syndicate-client/plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12637,7 +12662,7 @@
     "name": "type-create",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/type-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-type/type-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12675,7 +12700,7 @@
     "name": "type-delete",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/type-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-type/type-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12741,7 +12766,7 @@
     "name": "type-retrieve",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/type-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-type/type-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12779,7 +12804,7 @@
     "name": "type-status",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/type-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-type/type-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12845,7 +12870,7 @@
     "name": "type-update",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/type-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-type/type-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12856,7 +12881,7 @@
     "name": "types",
     "group": "Cloud",
     "version": "0.0.0",
-    "filename": ".core/plugin/type/type-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-type/type-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12917,7 +12942,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/users/users-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-users/users-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -12997,7 +13022,7 @@
         "type": "json"
       }
     ],
-    "filename": ".core/plugin/users/users-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-users/users-plugin.js",
     "groupTitle": "Cloud"
   },
   {
@@ -13162,7 +13187,7 @@
     "name": "content-before-clone",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13207,7 +13232,7 @@
     "name": "content-before-save",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13231,7 +13256,7 @@
     "name": "content-default-change-types",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13255,7 +13280,7 @@
     "name": "content-default-statuses",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/content-plugin.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/content-plugin.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13307,7 +13332,7 @@
     "name": "content-deleted",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13389,7 +13414,7 @@
     "name": "content-field-sanitize",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13427,7 +13452,7 @@
     "name": "content-list",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13458,7 +13483,7 @@
     "name": "content-published",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13496,7 +13521,45 @@
     "name": "content-query",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
+    "groupTitle": "Hooks"
+  },
+  {
+    "type": "Hook",
+    "url": "content-query-count",
+    "title": "content-query-count",
+    "description": "<p>Called before a content query count has taken place via Content.list() function.</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "Object",
+            "optional": false,
+            "field": "query",
+            "description": "<p>Actinium Query object</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object",
+            "optional": false,
+            "field": "params",
+            "description": "<p>The request.params object</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object",
+            "optional": false,
+            "field": "options",
+            "description": "<p>The request options object</p>"
+          }
+        ]
+      }
+    },
+    "name": "content-query-count",
+    "group": "Hooks",
+    "version": "0.0.0",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13534,7 +13597,7 @@
     "name": "content-query-results",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13579,7 +13642,7 @@
     },
     "description": "<p>Called after <code>Content.restore()</code></p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13624,7 +13687,7 @@
     "name": "content-retrieve",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13669,7 +13732,7 @@
     "name": "content-saved",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13707,7 +13770,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13738,7 +13801,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13776,7 +13839,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13814,7 +13877,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13845,7 +13908,7 @@
     "name": "content-slug-changed",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13890,7 +13953,7 @@
     "name": "content-status-changed",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13921,7 +13984,7 @@
     "name": "content-trashed",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13952,7 +14015,7 @@
     "name": "content-unpublished",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -13990,7 +14053,7 @@
     },
     "description": "<p>Triggered before the query is executed as a result of calling the Actinium.Recycle.retrieve function.</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/recycle/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-recycle/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14042,7 +14105,7 @@
     "name": "search-index",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/search/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-search/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14091,7 +14154,7 @@
     "name": "search-index-config",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/search/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-search/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14143,7 +14206,7 @@
     "name": "search-index-item-normalize",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/search/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-search/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14167,7 +14230,7 @@
     "name": "type-maintenance",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14205,7 +14268,7 @@
     },
     "description": "<p>Triggered after url Route objects have been attached to a Content object as a result of calliing Actinium.URL.attach() function.</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14243,7 +14306,7 @@
     },
     "description": "<p>Triggered after urls have been deleted as a result of calling Actinium.URL.delete() function.</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14281,7 +14344,7 @@
     },
     "description": "<p>Triggered before a url is trashed as a result of calling Actinium.URL.trash() function.</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14312,7 +14375,7 @@
     },
     "description": "<p>Triggered after url Route objects have been created as a result of calling the Actinium.URL.create() function.</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14357,7 +14420,7 @@
     },
     "description": "<p>Triggered after urls have been deleted as a result of calling Actinium.URL.delete() function.</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14395,7 +14458,7 @@
     },
     "description": "<p>Triggered before the url query is executed as a result of calling Actinium.URL.retrieve() function</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14433,7 +14496,7 @@
     },
     "description": "<p>Triggered after the url query is executed as a result of calling Actinium.URL.retrieve() function</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14478,7 +14541,7 @@
     },
     "description": "<p>Triggered after a url is trashed as a result of calling Actinium.URL.trash() function.</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14516,7 +14579,7 @@
     "name": "urls",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14554,7 +14617,7 @@
     "name": "urls-query",
     "group": "Hooks",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   },
   {
@@ -14592,7 +14655,7 @@
     },
     "description": "<p>Triggered when a url is restored as a result of calling the Actinium.URL.resotre() function.</p>",
     "version": "0.0.0",
-    "filename": ".core/plugin/content/URLWidget/sdk.js",
+    "filename": "actinium_modules/@atomic-reactor/actinium-content/URLWidget/sdk.js",
     "groupTitle": "Hooks"
   }
 ]

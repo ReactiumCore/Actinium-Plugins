@@ -1,31 +1,34 @@
-const _ = require('underscore');
-const pkg = require('./package');
-const op = require('object-path');
-const SDK = require(`${BASE_DIR}/.core/lib/setting`);
+import fs from 'fs';
+import _ from 'underscore';
+import op from 'object-path';
+import PLUGIN_ROUTES from './routes.js';
+import PLUGIN_BLUEPRINTS from './blueprints.js';
 
-const {
-    CloudCapOptions,
-    CloudHasCapabilities,
-} = require(`${ACTINIUM_DIR}/lib/utils`);
+const pkg = JSON.parse(fs.readFileSync('package.json'));
 
-const PLUGIN = {
-    ID: 'Settings',
-    description: 'Settings plugin used to manage application settings',
-    name: 'Settings Plugin',
-    order: Actinium.Enums.priority.highest * 10,
-    version: {
-        actinium: op.get(pkg, 'actinium.version', '>=3.2.6'),
-        plugin: op.get(pkg, 'version'),
-    },
-    meta: {
-        group: 'core',
-        builtIn: true,
-    },
-};
+const MOD = async () => {
+    const { default: SDK } = await import(`${BASE_DIR}/.core/lib/setting.js`);
 
-const COLLECTION = 'Setting';
+    const { CloudCapOptions, CloudHasCapabilities } = Actinium.Utils;
 
-/**
+    const PLUGIN = {
+        ID: 'Settings',
+        description: 'Settings plugin used to manage application settings',
+        name: 'Settings Plugin',
+        order: Actinium.Enums.priority.highest * 10,
+        version: {
+            actinium: op.get(pkg, 'actinium.version', '>=3.2.6'),
+            plugin: op.get(pkg, 'version'),
+        },
+        meta: {
+            group: 'core',
+            builtIn: true,
+        },
+    };
+
+    const COLLECTION = 'Setting';
+
+    /**
  * @api {Cloud} setting-set setting-set
  * @apiVersion 3.1.1
  * @apiGroup Cloud
@@ -51,91 +54,91 @@ Actinium.Cloud.run('setting-set', { key: 'site', value: {title: 'My Site', hostn
 
 ]});
  */
-const set = async req => {
-    const { params = {} } = req;
-    const { key = '', value } = params;
-    const [group, ...settingPath] = key.split('.');
-    if (!group) return;
+    const set = async (req) => {
+        const { params = {} } = req;
+        const { key = '', value } = params;
+        const [group, ...settingPath] = key.split('.');
+        if (!group) return;
 
-    const strict = false;
+        const strict = false;
 
-    // permission to create new or update this setting
-    if (
-        !CloudHasCapabilities(
-            req,
-            [
-                `${COLLECTION}.create`,
-                `${COLLECTION}.update`,
-                `setting.${group}-set`,
-            ],
-            strict,
+        // permission to create new or update this setting
+        if (
+            !CloudHasCapabilities(
+                req,
+                [
+                    `${COLLECTION}.create`,
+                    `${COLLECTION}.update`,
+                    `setting.${group}-set`,
+                ],
+                strict,
+            )
         )
-    )
-        return Promise.reject('Permission denied.');
+            return Promise.reject('Permission denied.');
 
-    if (!isValid(value)) {
-        return Promise.reject('invalid setting type: ' + typeof value);
-    }
+        if (!isValid(value)) {
+            return Promise.reject('invalid setting type: ' + typeof value);
+        }
 
-    const masterOptions = Actinium.Utils.MasterOptions();
+        const masterOptions = Actinium.Utils.MasterOptions();
 
-    Actinium.Cache.del(`setting.${group}`);
+        Actinium.Cache.del(`setting.${group}`);
 
-    let obj = await new Actinium.Query(COLLECTION)
-        .equalTo('key', group)
-        .first(masterOptions);
-    obj = obj || new Actinium.Object(COLLECTION);
+        let obj = await new Actinium.Query(COLLECTION)
+            .equalTo('key', group)
+            .first(masterOptions);
+        obj = obj || new Actinium.Object(COLLECTION);
 
-    let objValue;
-    if (settingPath.length) {
-        objValue = op.get(obj.get('value'), 'value', {});
-        op.set(objValue, settingPath, value);
-    } else {
-        objValue = value;
-    }
+        let objValue;
+        if (settingPath.length) {
+            objValue = op.get(obj.get('value'), 'value', {});
+            op.set(objValue, settingPath, value);
+        } else {
+            objValue = value;
+        }
 
-    obj.set('key', group);
-    obj.set('value', { value: objValue });
+        obj.set('key', group);
+        obj.set('value', { value: objValue });
 
-    const permissions = op.get(params, 'permissions', [
-        {
-            permission: 'read',
-            type: 'public',
-            allow: false,
-        },
-        {
-            permission: 'write',
-            type: 'public',
-            allow: false,
-        },
-    ]);
+        const permissions = op.get(params, 'permissions', [
+            {
+                permission: 'read',
+                type: 'public',
+                allow: false,
+            },
+            {
+                permission: 'write',
+                type: 'public',
+                allow: false,
+            },
+        ]);
 
-    const groupACL = await Actinium.Utils.CloudACL(
-        permissions,
-        `setting.${group}-get`, // read
-        `setting.${group}-set`, // write
-        obj.getACL(),
-    );
+        const groupACL = await Actinium.Utils.CloudACL(
+            permissions,
+            `setting.${group}-get`, // read
+            `setting.${group}-set`, // write
+            obj.getACL(),
+        );
 
-    obj.setACL(groupACL);
+        obj.setACL(groupACL);
 
-    const setting = await obj.save(null, masterOptions);
+        const setting = await obj.save(null, masterOptions);
 
-    Actinium.Cache.set(
-        `setting.${key}`,
-        objValue,
-        Actinium.Enums.cache.dataLoading,
-    );
+        Actinium.Cache.set(
+            `setting.${key}`,
+            objValue,
+            Actinium.Enums.cache.dataLoading,
+        );
 
-    const result = op.get(setting.get('value'), 'value');
-    if (settingPath.length) {
-        return op.get(result, settingPath);
-    }
+        const result = op.get(setting.get('value'), 'value');
+        if (settingPath.length) {
+            return op.get(result, settingPath);
+        }
 
-    return result;
-};
+        return result;
+    };
 
-/**
+    /**
  * @api {Cloud} setting-unset setting-unset
  * @apiVersion 3.1.1
  * @apiGroup Cloud
@@ -146,261 +149,267 @@ const set = async req => {
  * @apiExample Example Usage:
 Actinium.Cloud.run('setting-unset', { key: 'site' });
  */
-const del = async req => {
-    const { key = '' } = req.params;
-    const [group, ...settingPath] = key.split('.');
+    const del = async (req) => {
+        const { key = '' } = req.params;
+        const [group, ...settingPath] = key.split('.');
 
-    // delete only for top-level groups, otherwise set
-    if (settingPath.length) {
-        op.del(req, 'params.value');
-        return set(req);
-    }
+        // delete only for top-level groups, otherwise set
+        if (settingPath.length) {
+            op.del(req, 'params.value');
+            return set(req);
+        }
 
-    const strict = false;
+        const strict = false;
 
-    // permission to create new or update this setting
-    if (
-        !CloudHasCapabilities(
+        // permission to create new or update this setting
+        if (
+            !CloudHasCapabilities(
+                req,
+                [`${COLLECTION}.delete`, `setting.${group}-delete`],
+                strict,
+            )
+        )
+            return Promise.reject('Permission denied.');
+
+        const opts = CloudCapOptions(
             req,
             [`${COLLECTION}.delete`, `setting.${group}-delete`],
             strict,
-        )
-    )
-        return Promise.reject('Permission denied.');
-
-    const opts = CloudCapOptions(
-        req,
-        [`${COLLECTION}.delete`, `setting.${group}-delete`],
-        strict,
-    );
-
-    let obj = await new Actinium.Query(COLLECTION)
-        .equalTo('key', group)
-        .first(opts);
-
-    return obj ? obj.destroy(opts) : Promise.resolve();
-};
-
-const isValid = value => {
-    const checks = [
-        'isEmpty',
-        'isBoolean',
-        'isNumber',
-        'isString',
-        'isDate',
-        'isArray',
-        'isObject',
-    ];
-
-    return checks.reduce((status, func) => _[func](value) || status, false);
-};
-
-const afterSave = req => {
-    const { key, value } = req.object.toJSON();
-    Actinium.Cache.set(`setting.${key}`, op.get(value, 'value'));
-};
-
-const afterDel = req => {
-    const { key = '' } = req.object.toJSON();
-
-    Actinium.Cache.del(`setting.${key}`);
-    Actinium.Capability.unregister(`setting.${key}-set`);
-    Actinium.Capability.unregister(`setting.${key}-get`);
-    Actinium.Capability.unregister(`setting.${key}-delete`);
-    Actinium.Hook.run('setting-unset', key);
-};
-
-const beforeSave = async req => {
-    const { key, value } = req.object.toJSON();
-
-    if (req.original) {
-        const { value: previous } = req.original.toJSON();
-
-        if (!_.isEqual(previous, value)) {
-            Actinium.Hook.run('setting-change', key, value, previous);
-        }
-    }
-
-    Actinium.Cache.set(`setting.${key}`, op.get(value, 'value'));
-    Actinium.Hook.run('setting-set', key, value);
-};
-
-const registerBlueprints = (reg = true) => ({ ID }) => {
-    if (typeof Actinium.Blueprint === 'undefined') return;
-
-    if (ID && ID !== PLUGIN.ID) return;
-    const PLUGIN_BLUEPRINTS = require('./blueprints');
-
-    if (reg === true) {
-        PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.register(bp.ID, bp));
-    } else {
-        PLUGIN_BLUEPRINTS.forEach(bp => Actinium.Blueprint.unregister(bp.ID));
-    }
-};
-
-const saveRoutes = async () => {
-    if (typeof Actinium.Route === 'undefined') return;
-    const PLUGIN_ROUTES = require('./routes');
-    for (const route of PLUGIN_ROUTES) {
-        await Actinium.Route.save(route);
-    }
-};
-
-Actinium.Plugin.register(PLUGIN, true);
-
-Actinium.Capability.register(
-    `${COLLECTION}.create`,
-    {},
-    Actinium.Enums.priority.highest,
-);
-Actinium.Capability.register(
-    `${COLLECTION}.retrieve`,
-    {},
-    Actinium.Enums.priority.highest,
-);
-Actinium.Capability.register(
-    `${COLLECTION}.update`,
-    {},
-    Actinium.Enums.priority.highest,
-);
-Actinium.Capability.register(
-    `${COLLECTION}.delete`,
-    {},
-    Actinium.Enums.priority.highest,
-);
-Actinium.Capability.register(
-    `${COLLECTION}.addField`,
-    {},
-    Actinium.Enums.priority.highest,
-);
-
-Actinium.Capability.register(
-    'settings-ui.view',
-    {},
-    Actinium.Enums.priority.highest,
-);
-
-// Anonymous - Non Sensitive settings groups only!
-Actinium.Hook.register(
-    'before-capability-load',
-    () => {
-        SDK.anonymousGroup.list.forEach(({ id }) =>
-            Actinium.Capability.register(`setting.${id}-get`, {
-                allowed: ['anonymous', 'user', 'contributor', 'moderator'],
-            }),
         );
-    },
-    Actinium.Enums.priority.lowest,
-);
 
-// All operations on settings are privileged
-Actinium.Collection.register(
-    COLLECTION,
-    {
-        create: false,
-        retrieve: true,
-        update: false,
-        delete: false,
-        addField: false,
-    },
-    {
-        key: {
-            type: 'String',
-        },
-        value: {
-            type: 'Object',
-        },
-    },
-    ['key'],
-);
+        let obj = await new Actinium.Query(COLLECTION)
+            .equalTo('key', group)
+            .first(opts);
 
-Actinium.Hook.register(
-    'settings-acl-roles',
-    async context => {
-        context.roles = ['administrator', 'super-admin'];
-    },
-    Actinium.Enums.priority.highest,
-);
+        return obj ? obj.destroy(opts) : Promise.resolve();
+    };
 
-// Start: Blueprints
-Actinium.Hook.register('start', registerBlueprints(true));
+    const isValid = (value) => {
+        const checks = [
+            'isEmpty',
+            'isBoolean',
+            'isNumber',
+            'isString',
+            'isDate',
+            'isArray',
+            'isObject',
+        ];
 
-// Activate: Blueprints - Update blueprints on plugin activation
-Actinium.Hook.register('activate', registerBlueprints(true));
+        return checks.reduce((status, func) => _[func](value) || status, false);
+    };
 
-// Active: Routes - Update routes on plugin activation
-Actinium.Hook.register('activate', async ({ ID }) => {
-    if (ID === PLUGIN.ID) {
-        await saveRoutes();
-    }
-});
+    const afterSave = (req) => {
+        const { key, value } = req.object.toJSON();
+        Actinium.Cache.set(`setting.${key}`, op.get(value, 'value'));
+    };
 
-// Deactivate: Blueprints
-Actinium.Hook.register('deactivate', registerBlueprints(false));
+    const afterDel = (req) => {
+        const { key = '' } = req.object.toJSON();
 
-// Deactivate: Routes - Remove routes on deactivation
-Actinium.Hook.register('deactivate', async ({ ID }) => {
-    if (ID === PLUGIN.ID) {
-        const PLUGIN_ROUTES = require('./routes');
-        for (const route of PLUGIN_ROUTES) {
-            await Actinium.Route.delete(route);
+        Actinium.Cache.del(`setting.${key}`);
+        Actinium.Capability.unregister(`setting.${key}-set`);
+        Actinium.Capability.unregister(`setting.${key}-get`);
+        Actinium.Capability.unregister(`setting.${key}-delete`);
+        Actinium.Hook.run('setting-unset', key);
+    };
+
+    const beforeSave = async (req) => {
+        const { key, value } = req.object.toJSON();
+
+        if (req.original) {
+            const { value: previous } = req.original.toJSON();
+
+            if (!_.isEqual(previous, value)) {
+                Actinium.Hook.run('setting-change', key, value, previous);
+            }
         }
-    }
-});
 
-// Update routes on startup
-Actinium.Hook.register('start', async () => {
-    if (Actinium.Plugin.isActive(PLUGIN.ID)) {
-        await saveRoutes();
-    }
-});
+        Actinium.Cache.set(`setting.${key}`, op.get(value, 'value'));
+        Actinium.Hook.run('setting-set', key, value);
+    };
 
-// Update routes on plugin update
-Actinium.Hook.register('update', async ({ ID }) => {
-    if (ID === PLUGIN.ID) {
-        await saveRoutes();
-    }
-});
+    const registerBlueprints =
+        (reg = true) =>
+        ({ ID }) => {
+            if (typeof Actinium.Blueprint === 'undefined') return;
 
-// Running hook
-Actinium.Hook.register('running', async () => {
-    Actinium.Pulse.define(
-        'settings-sync',
+            if (ID && ID !== PLUGIN.ID) return;
+
+            if (reg === true) {
+                PLUGIN_BLUEPRINTS.forEach((bp) =>
+                    Actinium.Blueprint.register(bp.ID, bp),
+                );
+            } else {
+                PLUGIN_BLUEPRINTS.forEach((bp) =>
+                    Actinium.Blueprint.unregister(bp.ID),
+                );
+            }
+        };
+
+    const saveRoutes = async () => {
+        if (typeof Actinium.Route === 'undefined') return;
+        for (const route of PLUGIN_ROUTES) {
+            await Actinium.Route.save(route);
+        }
+    };
+
+    Actinium.Plugin.register(PLUGIN, true);
+
+    Actinium.Capability.register(
+        `${COLLECTION}.create`,
+        {},
+        Actinium.Enums.priority.highest,
+    );
+    Actinium.Capability.register(
+        `${COLLECTION}.retrieve`,
+        {},
+        Actinium.Enums.priority.highest,
+    );
+    Actinium.Capability.register(
+        `${COLLECTION}.update`,
+        {},
+        Actinium.Enums.priority.highest,
+    );
+    Actinium.Capability.register(
+        `${COLLECTION}.delete`,
+        {},
+        Actinium.Enums.priority.highest,
+    );
+    Actinium.Capability.register(
+        `${COLLECTION}.addField`,
+        {},
+        Actinium.Enums.priority.highest,
+    );
+
+    Actinium.Capability.register(
+        'settings-ui.view',
+        {},
+        Actinium.Enums.priority.highest,
+    );
+
+    // Anonymous - Non Sensitive settings groups only!
+    Actinium.Hook.register(
+        'before-capability-load',
+        () => {
+            SDK.anonymousGroup.list.forEach(({ id }) =>
+                Actinium.Capability.register(`setting.${id}-get`, {
+                    allowed: ['anonymous', 'user', 'contributor', 'moderator'],
+                }),
+            );
+        },
+        Actinium.Enums.priority.lowest,
+    );
+
+    // All operations on settings are privileged
+    Actinium.Collection.register(
+        COLLECTION,
         {
-            schedule: op.get(ENV, 'SETTINGS_SYNC_SCHEDULE', '* * * * *'),
+            create: false,
+            retrieve: false,
+            update: false,
+            delete: false,
+            addField: false,
         },
-        async () => {
-            const prevSettings = Actinium.Cache.get('setting');
-            const settings = await SDK.load();
-            Actinium.Hook.run('settings-sync', settings, prevSettings);
+        {
+            key: {
+                type: 'String',
+            },
+            value: {
+                type: 'Object',
+            },
         },
-    );
-});
-
-Actinium.Cloud.define(PLUGIN.ID, 'settings', SDK.list);
-Actinium.Cloud.define(PLUGIN.ID, 'setting-get', req => {
-    const key = op.get(req, 'params.key');
-    const [group] = String(key).split('.');
-
-    const options = CloudCapOptions(
-        req,
-        [`${COLLECTION}.retrieve`, `setting.${group}-get`],
-        false,
+        ['key'],
     );
 
-    return SDK.get(key, null, options);
-});
+    Actinium.Hook.register(
+        'settings-acl-roles',
+        async (context) => {
+            context.roles = ['administrator', 'super-admin'];
+        },
+        Actinium.Enums.priority.highest,
+    );
 
-Actinium.Cloud.define(PLUGIN.ID, 'setting-set', set);
-Actinium.Cloud.define(PLUGIN.ID, 'setting-save', set);
-Actinium.Cloud.define(PLUGIN.ID, 'setting-unset', del);
-Actinium.Cloud.define(PLUGIN.ID, 'setting-del', del);
-Actinium.Cloud.define(PLUGIN.ID, 'setting-rm', del);
+    // Start: Blueprints
+    Actinium.Hook.register('start', registerBlueprints(true));
 
-Actinium.Cloud.afterDelete(COLLECTION, afterDel);
-Actinium.Cloud.afterSave(COLLECTION, afterSave);
-Actinium.Cloud.beforeSave(COLLECTION, beforeSave);
+    // Activate: Blueprints - Update blueprints on plugin activation
+    Actinium.Hook.register('activate', registerBlueprints(true));
 
+    // Active: Routes - Update routes on plugin activation
+    Actinium.Hook.register('activate', async ({ ID }) => {
+        if (ID === PLUGIN.ID) {
+            await saveRoutes();
+        }
+    });
+
+    // Deactivate: Blueprints
+    Actinium.Hook.register('deactivate', registerBlueprints(false));
+
+    // Deactivate: Routes - Remove routes on deactivation
+    Actinium.Hook.register('deactivate', async ({ ID }) => {
+        if (ID === PLUGIN.ID) {
+            const PLUGIN_ROUTES = require('./routes');
+            for (const route of PLUGIN_ROUTES) {
+                await Actinium.Route.delete(route);
+            }
+        }
+    });
+
+    // Update routes on startup
+    Actinium.Hook.register('start', async () => {
+        if (Actinium.Plugin.isActive(PLUGIN.ID)) {
+            await saveRoutes();
+        }
+    });
+
+    // Update routes on plugin update
+    Actinium.Hook.register('update', async ({ ID }) => {
+        if (ID === PLUGIN.ID) {
+            await saveRoutes();
+        }
+    });
+
+    // Running hook
+    Actinium.Hook.register('running', async () => {
+        Actinium.Pulse.define(
+            'settings-sync',
+            {
+                schedule: op.get(ENV, 'SETTINGS_SYNC_SCHEDULE', '* * * * *'),
+            },
+            async () => {
+                const prevSettings = Actinium.Cache.get('setting');
+                const settings = await SDK.load();
+                Actinium.Hook.run('settings-sync', settings, prevSettings);
+            },
+        );
+    });
+
+    Actinium.Cloud.define(PLUGIN.ID, 'settings', SDK.list);
+    Actinium.Cloud.define(PLUGIN.ID, 'setting-get', (req) => {
+        const key = op.get(req, 'params.key');
+        const [group] = String(key).split('.');
+
+        const options = CloudCapOptions(
+            req,
+            [`${COLLECTION}.retrieve`, `setting.${group}-get`],
+            false,
+        );
+
+        return SDK.get(key, null, options);
+    });
+
+    Actinium.Cloud.define(PLUGIN.ID, 'setting-set', set);
+    Actinium.Cloud.define(PLUGIN.ID, 'setting-save', set);
+    Actinium.Cloud.define(PLUGIN.ID, 'setting-unset', del);
+    Actinium.Cloud.define(PLUGIN.ID, 'setting-del', del);
+    Actinium.Cloud.define(PLUGIN.ID, 'setting-rm', del);
+
+    Actinium.Cloud.afterDelete(COLLECTION, afterDel);
+    Actinium.Cloud.afterSave(COLLECTION, afterSave);
+    Actinium.Cloud.beforeSave(COLLECTION, beforeSave);
+};
+
+export default MOD();
 /**
  * @api {Object} Actinium.Setting Setting
  * @apiVersion 3.1.1

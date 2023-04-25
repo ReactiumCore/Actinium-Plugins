@@ -1,4 +1,4 @@
-module.exports = [
+export default [
     {
         collection: 'Type_taxonomy',
         actions: {
