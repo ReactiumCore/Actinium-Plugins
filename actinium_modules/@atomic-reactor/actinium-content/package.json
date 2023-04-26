@@ -1,22 +1,17 @@
 {
-  "actinium": {
-    "version": ">5.0.0"
-  },
-  "reactium": {
-    "version": "5.0.0"
-  },
-  "type": "module",
-  "name": "@atomic-reactor/actinium-content",
-  "description": "Actinium core plugin",
+  "name": "actinium-content",
+  "version": "5.1.0",
+  "description": "Plugn for managing Actinium content",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-    "actinium",
-    "core"
-  ],
-  "author": "Reactium LLC",
+  "keywords": [],
   "license": "MIT",
-  "version": "5.0.1"
+  "reactium": {
+    "version": "&gt;&#x3D;5.0.0"
+  },
+  "actinium": {
+    "version": "&gt;&#x3D;5.0.1"
+  }
 }
