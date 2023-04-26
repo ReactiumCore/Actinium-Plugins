@@ -88,11 +88,8 @@ class SDK {
         return async (params, options) => {
             // Fetch the Type object if value is a string
             let type = op.get(params, 'type');
-
-            if (type && _.isString(type)) {
-                type = await this.utils.typeFromMachineName(type);
-                op.set(params, 'type', type);
-            }
+            type = await this.utils.type(type);
+            op.set(params, 'type', type);
 
             // Generate the slug from the title
             let slug = op.get(params, 'slug');
@@ -191,17 +188,29 @@ class SDK {
 
             await Actinium.Hook.run('content-before-save', req);
 
-            // Fetch the Type object if value is a string
+            // Fetch the Type object
             let type = req.object.get('type');
-            if (type && _.isString(type)) {
-                type = await this.utils.typeFromMachineName(type);
-                if (type) req.object.set('type', type);
+            type = await this.utils.type(type);
+            req.object.set('type', type);
+
+            // Set user value
+            let user = await this.utils.userFromString(req.object.get('user'));
+            if (user) {
+                req.object.set('user', user);
+            } else {
+                req.object.unset('user');
             }
 
-            // Fetch the entire Type object because Parse gives a lite version
-            if (type) {
-                type = await type.fetch({ useMasterKey: true });
-            }
+            // Generate the ACL
+
+            const ACL = user ? new Actinium.ACL(user.id) : new Actinium.ACL();
+            ACL.setPublicReadAccess(true);
+            ACL.setRoleWriteAccess('super-admin', true);
+            ACL.setRoleWriteAccess('administrator', true);
+
+            req.object.setACL(ACL);
+
+            await Actinium.Hook.run('content-acl', req);
 
             // Generate the status
             if (type && !req.object.get('status')) {
@@ -308,14 +317,57 @@ class SDK {
                 return uuid(`${type}/${slug}`, ENUMS.NAMESPACE);
             },
 
-            typeFromMachineName: async (str, options) => {
+            type: async (type) => {
+                if (type) {
+                    if (_.isString(type)) {
+                        type = await this.utils.typeFromString(
+                            'machineName',
+                            type,
+                        );
+                    } else if (_.isObject(type)) {
+                        if (op.get(type, 'id')) {
+                            type = await type.fetch({ useMasterKey: true });
+                        } else {
+                            let k, v;
+                            k = !k && op.get(type, 'uuid') ? 'uuid' : k;
+                            k = !k && op.get(type, 'objectId') ? 'objectId' : k;
+                            k =
+                                !k && op.get(type, 'machineName')
+                                    ? 'machineName'
+                                    : k;
+
+                            v = op.get(type, k);
+
+                            if (k && v) {
+                                type = await this.utils.typeFromString(k, v);
+                            }
+                        }
+                    }
+                }
+
+                return type;
+            },
+
+            typeFromString: async (key, str, options) => {
                 this.utils.assertString('type', str);
 
                 options = options || { useMasterKey: true };
                 const qry = new Actinium.Query('Type');
-                qry.equalTo('machineName', str);
+                qry.equalTo(key, str);
 
-                return qry.first(options);
+                const type = await qry.first(options);
+
+                return type ? type.fetch(options) : undefined;
+            },
+
+            userFromString: async (user) => {
+                if (_.isString(user)) {
+                    let uobj = new Actinium.Object('_User');
+                    uobj.id = user;
+                    user = uobj;
+                }
+
+                return user;
             },
         };
     }
