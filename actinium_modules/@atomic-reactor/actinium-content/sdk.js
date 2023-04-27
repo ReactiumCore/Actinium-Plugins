@@ -12,9 +12,12 @@ const __dirname = dirname(import.meta.url);
 const __pkg = fs.readJsonSync(path.normalize(`${__dirname}/package.json`));
 
 const ENUMS = {
+    SEARCH_LENGTH: 4,
+    REQUIRED: ['title'],
     NAMESPACE:
         Event.CONTENT_NAMESPACE || '9f85eb4d-777b-4213-b039-fced11c2dbae',
     ERROR: {
+        SEARCH_LENGTH: 'title paramater must be 4 characters or more',
         REQUIRED: 'is a required parameter',
     },
 };
@@ -38,67 +41,103 @@ class SDK {
         return op.get(__pkg, 'version', '0.0.1');
     }
 
+    get exists() {
+        return async ({ type, slug }, options) => {
+            this.utils.assertTypeSlug(type, slug);
+
+            options = options || { useMasterKey: true };
+            const uuid = this.utils.genUUID(type, slug);
+            const obj = await this.retrieve({ uuid }, options);
+
+            return !!obj;
+        };
+    }
+
     get find() {
         return async (params, options) => {
             const qry = new Actinium.Query(this.collection);
 
-            // type
-            let type = await this.utils.type(op.get(params, 'type'));
-            if (type) qry.equalTo('type', type);
-
-            // slug
-            let slugs = op.get(params, 'slug');
-            slugs = slugs && _.isString(slugs) ? [slugs] : slugs;
-
-            if (!type && _.isArray(slugs)) qry.containedIn('slug', slugs);
-
-            // type/slug ~> uuids
-            if (type && _.isArray(slugs)) {
-                const typeMachineName = type.get('machineName');
-                const uuids = slugs.map((slug) =>
-                    this.utils.genUUID(typeMachineName, slug),
-                );
-                qry.containedIn('uuid', uuids);
-            }
-
             // uuid
             let uuids = op.get(params, 'uuid');
-            uuids = uuids && _.isString(uuids) ? [uuids] : uuids;
-            if (_.isArray(uuids)) qry.containedIn('uuid', uuids);
+            uuids = this.utils.stringToArray(uuids);
+            if (uuids.length > 0) qry.containedIn('uuid', uuids);
 
             // objectId
             let oids = op.get(params, 'objectId');
-            oids = oids && _.isString(oids) ? [oids] : oids;
-            if (_.isArray(oids)) qry.containedIn('objectId', oids);
+            oids = this.utils.stringToArray(oids);
+            if (oids.length > 0) qry.containedIn('objectId', oids);
 
             // title
             let title = op.get(params, 'title');
             if (_.isString(title)) {
-                qry.matches('title', new RegExp(title), 'gi');
+                this.utils.assertSearchLength(title);
+                qry.matches('title', new RegExp(title));
             }
 
             // status
             let statuses = op.get(params, 'status');
-            statuses = _.isString(statuses)
-                ? [String(statuses).toUpperCase()]
-                : statuses;
+            statuses = this.utils.stringToArray(statuses);
+            statuses = statuses.map((s) => String(s).toUpperCase());
+            if (statuses.length > 0) qry.containedIn('status', statuses);
 
-            if (_.isArray(statuses)) qry.containedIn('status', statuses);
+            // user
+            let users = op.get(params, 'user');
+            users = this.utils.stringToArray(users);
+            users = await Promise.all(users.map(this.utils.userFromString));
+            if (users.length > 0) qry.containedIn('user', users);
 
-            // user 
-            let users = op.get(params, 'users');
-            users = users && _.isString(users) ? [users] : users;
-            if (_.isArray(users)) {
-                users = users.map(uid => {
-                    const obj = new Actinium.Object('_User');
-                    obj.id = uid;
-                    return obj;
-                }); 
+            // type
+            let type = await this.utils.type(op.get(params, 'type'));
 
-                qry.containedIn('user', users);
+            // slug
+            let slugs = op.get(params, 'slug');
+            slugs = this.utils.stringToArray(slugs);
+
+            if (type) {
+                if (slugs.length < 1) {
+                    qry.equalTo('type', type);
+                } else {
+                    // type + slug convert to uuid
+                    const typeMachineName = type.get('machineName');
+                    slugs = slugs.map((slug) =>
+                        this.utils.genUUID(typeMachineName, slug),
+                    );
+                    if (slugs.length > 0) qry.containedIn('uuid', slugs);
+                }
             }
 
-            return qry.find(options);
+            await Actinium.Hook.run('content-query', {
+                query: qry,
+                params,
+                options,
+            });
+
+            // Pagination
+            const count = await qry.count(options);
+            let limit = op.get(params, 'limit', 50);
+            limit = Math.min(limit, 100);
+            qry.limit(limit);
+
+            const pages = Math.ceil(count / limit);
+
+            let page = op.get(params, 'page', 1);
+            page = Math.min(page, pages);
+            page = Math.max(page, 1);
+
+            const index = page * limit - limit;
+            qry.skip(index);
+
+            // Search
+            const results = await qry.find(options);
+
+            return {
+                count,
+                page,
+                pages,
+                limit,
+                index,
+                results,
+            };
         };
     }
 
@@ -247,7 +286,7 @@ class SDK {
                     get: getError(req),
                 },
                 isError: isError(req),
-                required: ['title', 'type'],
+                required: ENUMS.REQUIRED,
             };
 
             await Actinium.Hook.run('content-before-save', req);
@@ -255,10 +294,18 @@ class SDK {
             // Fetch the Type object
             let type = req.object.get('type');
             type = await this.utils.type(type);
+
+            if (!type) {
+                throw new Error(`[type:String|Object] ${ENUMS.ERROR.REQUIRED}`);
+            }
+
             req.object.set('type', type);
 
             // Set user value
-            let user = await this.utils.userFromString(req.object.get('user'));
+            let user = await this.utils.userFromString(
+                req.object.get('user'),
+                true,
+            );
             if (user) {
                 req.object.set('user', user);
             } else {
@@ -266,7 +313,6 @@ class SDK {
             }
 
             // Generate the ACL
-
             const ACL = user ? new Actinium.ACL(user) : new Actinium.ACL();
             ACL.setPublicReadAccess(true);
             ACL.setRoleReadAccess('super-admin', true);
@@ -304,8 +350,7 @@ class SDK {
             }
 
             // Generate the uuid from the type.machineName and slug
-            const uuid = req.object.get('uuid');
-            if (type && !uuid) {
+            if (type) {
                 req.object.set(
                     'uuid',
                     this.utils.genUUID(
@@ -333,21 +378,52 @@ class SDK {
         };
     }
 
-    get afterSave() {
-        return async (req) => {
-            await Actinium.Hook.run('content-after-save', req);
+    get delete() {
+        return async (params, options) => {
+            let { results, page, pages } = await this.find(params, options);
+
+            const items = [];
+
+            while (page <= pages) {
+                results.forEach((item) => {
+                    item.set('status', 'DELETE');
+                    item.saveEventually(options);
+                    items.push(item);
+                });
+
+                page++;
+
+                const next = await this.find({ ...params, page }, options);
+
+                results = next.results;
+            }
+
+            return { items };
         };
     }
 
-    get exists() {
-        return async ({ type, slug }, options) => {
-            this.utils.assertTypeSlug(type, slug);
+    get purge() {
+        return async (params, options) => {
+            op.set(params, 'status', 'DELETE');
 
-            options = options || { useMasterKey: true };
-            const uuid = this.utils.genUUID(type, slug);
-            const obj = await this.retrieve({ uuid }, options);
+            let { results, page, pages } = await this.find(params, options);
 
-            return !!obj;
+            const items = [];
+
+            while (page <= pages) {
+                results.forEach((item) => {
+                    item.destroyEventually(options);
+                    items.push(item);
+                });
+
+                page++;
+
+                const next = await this.find({ ...params, page }, options);
+
+                results = next.results;
+            }
+
+            return { items };
         };
     }
 
@@ -356,6 +432,12 @@ class SDK {
             assertString: (key, str) => {
                 if (!_.isString(str)) {
                     throw new Error(`[${key}:String] ${ENUMS.ERROR.REQUIRED}`);
+                }
+            },
+
+            assertSearchLength: (str) => {
+                if (String(str).length < ENUMS.SEARCH_LENGTH) {
+                    throw new Error(ENUMS.ERROR.SEARCH_LENGTH);
                 }
             },
 
@@ -377,6 +459,9 @@ class SDK {
                 this.utils.assertTypeSlug(type, slug);
                 return uuid(`${type}/${slug}`, ENUMS.NAMESPACE);
             },
+
+            stringToArray: (str) =>
+                _.chain([str]).flatten().compact().uniq().value(),
 
             type: async (type) => {
                 if (type) {
@@ -421,11 +506,14 @@ class SDK {
                 return type ? type.fetch(options) : undefined;
             },
 
-            userFromString: async (user) => {
+            userFromString: async (user, fetch = false) => {
                 if (_.isString(user)) {
                     let uobj = new Actinium.Object('_User');
                     uobj.id = user;
-                    uobj = await uobj.fetch({ useMasterKey: true });
+
+                    if (fetch === true) {
+                        uobj = await uobj.fetch({ useMasterKey: true });
+                    }
                     user = uobj;
                 }
 
