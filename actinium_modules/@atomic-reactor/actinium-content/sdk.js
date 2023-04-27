@@ -203,9 +203,11 @@ class SDK {
 
             // Generate the ACL
 
-            const ACL = user ? new Actinium.ACL(user.id) : new Actinium.ACL();
+            const ACL = user ? new Actinium.ACL(user) : new Actinium.ACL();
             ACL.setPublicReadAccess(true);
+            ACL.setRoleReadAccess('super-admin', true);
             ACL.setRoleWriteAccess('super-admin', true);
+            ACL.setRoleReadAccess('administrator', true);
             ACL.setRoleWriteAccess('administrator', true);
 
             req.object.setACL(ACL);
@@ -274,7 +276,7 @@ class SDK {
     }
 
     get exists() {
-        return async (type, slug, options) => {
+        return async ({ type, slug }, options) => {
             this.utils.assertTypeSlug(type, slug);
 
             options = options || { useMasterKey: true };
@@ -364,6 +366,7 @@ class SDK {
                 if (_.isString(user)) {
                     let uobj = new Actinium.Object('_User');
                     uobj.id = user;
+                    uobj = await uobj.fetch({ useMasterKey: true });
                     user = uobj;
                 }
 
