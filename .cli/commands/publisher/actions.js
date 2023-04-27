@@ -45,13 +45,13 @@ export default () => ({
         while (dirs.length > 0) {
             const dir = dirs.shift();
             await arcli.runCommand(
-                'arcli',
+                'reactium',
                 ['publish', '-p', 'n', '--ver', ver],
                 { cwd: dir },
             );
         }
     },
-    deps: async ({ action, params, props }) => {
+    deps: async ({ props }) => {
         const deps = mem.plugins.reduce((obj, dir) => {
             const pkgFilePath = dest(dir, 'package.json');
             if (!fs.existsSync(pkgFilePath)) return obj;

@@ -1,1 +1,22 @@
-../package.json
+{
+  "actinium": {
+    "version": ">5.0.0"
+  },
+  "reactium": {
+    "version": "5.0.0"
+  },
+  "type": "module",
+  "name": "@atomic-reactor/actinium-type",
+  "version": "5.0.1",
+  "description": "Actinium core plugin",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "actinium",
+    "core"
+  ],
+  "author": "Reactium LLC",
+  "license": "MIT"
+}
