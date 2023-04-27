@@ -7,7 +7,7 @@
   },
   "type": "module",
   "name": "@atomic-reactor/actinium-type",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Actinium core plugin",
   "main": "index.js",
   "scripts": {

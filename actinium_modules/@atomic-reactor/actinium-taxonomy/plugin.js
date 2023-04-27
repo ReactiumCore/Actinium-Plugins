@@ -5,7 +5,6 @@ import PLUGIN from './info.js';
 import Taxonomy from './sdk.js';
 import PLUGIN_SCHEMA from './schema.js';
 import PLUGIN_ROUTES from './routes.js';
-import PLUGIN_BLUEPRINTS from './blueprints.js';
 
 const MOD = () => {
     /**
@@ -41,32 +40,7 @@ const MOD = () => {
      * ----------------------------------------------------------------------------
      */
 
-    const registerBlueprints =
-        (reg = true) =>
-        ({ ID }) => {
-            if (ID && ID !== PLUGIN.ID) return;
-            if (!Actinium.Blueprint) return;
-
-            if (reg === true) {
-                PLUGIN_BLUEPRINTS.forEach((bp) =>
-                    Actinium.Blueprint.register(bp.ID, bp),
-                );
-            } else if (reg === true) {
-                PLUGIN_BLUEPRINTS.forEach((bp) =>
-                    Actinium.Blueprint.unregister(bp.ID),
-                );
-            }
-        };
-
-    // Start: Blueprints
-    Actinium.Hook.register('start', registerBlueprints(true));
-
-    // Activate: Blueprints
-    Actinium.Hook.register('activate', registerBlueprints(true));
-
-    // Deactivate: Blueprints
-    Actinium.Hook.register('deactivate', registerBlueprints(false));
-
+    // routes
     const saveRoutes = async () => {
         if (!Actinium.Route) return;
         for (const route of PLUGIN_ROUTES) {

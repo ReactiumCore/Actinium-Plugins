@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import op from 'object-path';
 import PLUGIN_ROUTES from './routes.js';
-import PLUGIN_BLUEPRINTS from './blueprints.js';
 
 const pkg = JSON.parse(fs.readFileSync('package.json'));
 
@@ -55,34 +54,14 @@ const MOD = () => {
      * ----------------------------------------------------------------------------
      */
 
-    // Start: Blueprints
-    Actinium.Hook.register('start', () => {
-        if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
-        PLUGIN_BLUEPRINTS.forEach((blueprint) =>
-            Actinium.Blueprint.register(blueprint.ID, blueprint),
-        );
-    });
 
-    // Activate: Blueprints
+    // Caps
     Actinium.Hook.register('activate', ({ ID }) => {
         if (ID !== PLUGIN.ID) return;
-        PLUGIN_BLUEPRINTS.forEach((blueprint) =>
-            Actinium.Blueprint.register(blueprint.ID, blueprint),
-        );
-
         registerCaps();
     });
 
-    // Deactivate: Blueprints
-    Actinium.Hook.register('dectivate', ({ ID }) => {
-        if (ID !== PLUGIN.ID) return;
-        PLUGIN_BLUEPRINTS.forEach((blueprint) =>
-            Actinium.Blueprint.unregister(blueprint.ID),
-        );
-    });
-
     // Routes
-
     const saveRoutes = async () => {
         for (const route of PLUGIN_ROUTES) {
             await Actinium.Route.save(route);

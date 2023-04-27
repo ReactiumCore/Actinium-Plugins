@@ -7,7 +7,7 @@
   },
   "type": "module",
   "name": "@atomic-reactor/actinium-ses-mailer",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "AWS SES Mailer plugin for Actinium",
   "main": "index.js",
   "scripts": {

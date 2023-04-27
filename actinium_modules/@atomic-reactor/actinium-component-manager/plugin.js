@@ -3,13 +3,6 @@ import op from 'object-path';
 
 const pkg = JSON.parse(fs.readFileSync('package.json'));
 
-const blueprintReg = async () => {
-    const { default: PLUGIN_BLUEPRINTS } = await import('./blueprints.js');
-    PLUGIN_BLUEPRINTS.forEach((blueprint) =>
-        Actinium.Blueprint.register(blueprint.ID, blueprint),
-    );
-};
-
 const MOD = async () => {
     const PLUGIN = {
         ID: 'Components',
@@ -58,41 +51,14 @@ const MOD = async () => {
      * ----------------------------------------------------------------------------
      */
 
-    // Start: Blueprints
-    Actinium.Hook.register('start', async () => {
-        if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
-        await blueprintReg();
-    });
-
-    // Activate: Register Routes & Blueprints
+    // Activate: Register Routes
     Actinium.Hook.register('activate', async ({ ID }) => {
         if (ID !== PLUGIN.ID) return;
-
-        await blueprintReg();
 
         const { default: PLUGIN_ROUTES } = await import('./routes.js');
         await Promise.all(
             PLUGIN_ROUTES.map((route) =>
                 Actinium.Route.save(route, { useMasterKey: true }),
-            ),
-        );
-    });
-
-    // Deactivate: Blueprints
-    Actinium.Hook.register('deactivate', async ({ ID }) => {
-        if (ID !== PLUGIN.ID) return;
-
-        // Remove blueprints
-        const { default: PLUGIN_BLUEPRINTS } = await import('./blueprints.js');
-        PLUGIN_BLUEPRINTS.forEach((blueprint) =>
-            Actinium.Blueprint.unregister(blueprint.ID),
-        );
-
-        // Remove routes
-        const { default: PLUGIN_ROUTES } = await import('./routes.js');
-        await Promise.all(
-            PLUGIN_ROUTES.map((route) =>
-                Actinium.Route.delete(route, { useMasterKey: true }),
             ),
         );
     });
