@@ -38,6 +38,70 @@ class SDK {
         return op.get(__pkg, 'version', '0.0.1');
     }
 
+    get find() {
+        return async (params, options) => {
+            const qry = new Actinium.Query(this.collection);
+
+            // type
+            let type = await this.utils.type(op.get(params, 'type'));
+            if (type) qry.equalTo('type', type);
+
+            // slug
+            let slugs = op.get(params, 'slug');
+            slugs = slugs && _.isString(slugs) ? [slugs] : slugs;
+
+            if (!type && _.isArray(slugs)) qry.containedIn('slug', slugs);
+
+            // type/slug ~> uuids
+            if (type && _.isArray(slugs)) {
+                const typeMachineName = type.get('machineName');
+                const uuids = slugs.map((slug) =>
+                    this.utils.genUUID(typeMachineName, slug),
+                );
+                qry.containedIn('uuid', uuids);
+            }
+
+            // uuid
+            let uuids = op.get(params, 'uuid');
+            uuids = uuids && _.isString(uuids) ? [uuids] : uuids;
+            if (_.isArray(uuids)) qry.containedIn('uuid', uuids);
+
+            // objectId
+            let oids = op.get(params, 'objectId');
+            oids = oids && _.isString(oids) ? [oids] : oids;
+            if (_.isArray(oids)) qry.containedIn('objectId', oids);
+
+            // title
+            let title = op.get(params, 'title');
+            if (_.isString(title)) {
+                qry.matches('title', new RegExp(title), 'gi');
+            }
+
+            // status
+            let statuses = op.get(params, 'status');
+            statuses = _.isString(statuses)
+                ? [String(statuses).toUpperCase()]
+                : statuses;
+
+            if (_.isArray(statuses)) qry.containedIn('status', statuses);
+
+            // user 
+            let users = op.get(params, 'users');
+            users = users && _.isString(users) ? [users] : users;
+            if (_.isArray(users)) {
+                users = users.map(uid => {
+                    const obj = new Actinium.Object('_User');
+                    obj.id = uid;
+                    return obj;
+                }); 
+
+                qry.containedIn('user', users);
+            }
+
+            return qry.find(options);
+        };
+    }
+
     get retrieve() {
         return async (params, options, create = false) => {
             options = options !== null ? options : { useMasterKey: true };
@@ -287,12 +351,6 @@ class SDK {
         };
     }
 
-    get list() {
-        return async (params, options) => {
-            const qry = new Actinium.Query();
-        };
-    }
-
     get utils() {
         return {
             assertString: (key, str) => {
@@ -305,6 +363,7 @@ class SDK {
                 this.utils.assertString('type', type);
                 this.utils.assertString('slug', slug);
             },
+
             genSlug: (slug) => {
                 this.utils.assertString('title', slug);
 
