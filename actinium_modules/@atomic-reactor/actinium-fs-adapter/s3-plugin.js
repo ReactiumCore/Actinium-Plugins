@@ -47,22 +47,8 @@ const MOD = () => {
     Actinium.FilesAdapter.register(PLUGIN, async config => {
         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
 
-        const settings = await Actinium.Setting.get('S3Adapter', {
-            directAccess: config.directAccess,
-            bucket: Actinium.options.S3_BUCKET,
-            region: Actinium.options.S3_REGION,
-            baseUrl: Actinium.options.S3_BASE_URL,
-            s3overrides: {
-                accessKeyId: Actinium.options.S3_ACCESS_KEY,
-                secretAccessKey: Actinium.options.S3_SECRET_KEY,
-            },
-        });
-
-        if (!op.has(settings, 's3overrides.endpoint')) {
-            const endpoint = op.get(Actinium.options, 'SPACES_ENDPOINT');
-            if (endpoint) op.set(settings, 's3overrides.endpoint', endpoint);
-        }
-
+        const settings = await Actinium.Setting.get('S3Adapter', {});
+        
         return new S3Adapter(settings);
     });
 
