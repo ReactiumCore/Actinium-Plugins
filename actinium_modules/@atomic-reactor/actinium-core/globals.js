@@ -29,7 +29,8 @@ const stringToObject = val => (typeof val === 'string' ? JSON.parse(val) : val);
 
 global.Actinium = {};
 global.ACTINIUM_CONFIG = ACTINIUM_CONFIG;
-global.BASE_DIR = path.normalize(path.resolve(path.join(__dirname, '..')));
+global.CORE_DIR = path.normalize(path.resolve(path.join(__dirname, '..')));
+global.BASE_DIR = path.normalize(path.resolve(path.join(__dirname, '../../..')));
 global.SRC_DIR = path.normalize(path.resolve(path.join(BASE_DIR, 'src')));
 global.APP_DIR = path.normalize(path.resolve(path.join(SRC_DIR, 'app')));
 global.ENV = baseENV.environment;

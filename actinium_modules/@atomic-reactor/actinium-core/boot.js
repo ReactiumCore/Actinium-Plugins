@@ -161,7 +161,7 @@ const envDev = () => {
     // Generate env.dev.json
     // Get the template file
     const templatePath = path.resolve(
-        path.join(BASE_DIR, '.core', 'env.def.json'),
+        path.join(CORE_DIR, 'env.def.json'),
     );
 
     // Copy to src
