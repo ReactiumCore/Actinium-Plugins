@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import _ from 'underscore';
 import op from 'object-path';
+import SDK from '@atomic-reactor/actinium-core/lib/roles.js';
 
 const pkg = JSON.parse(fs.readFileSync('package.json'));
 

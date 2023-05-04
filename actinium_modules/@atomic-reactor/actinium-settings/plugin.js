@@ -2,7 +2,8 @@ import fs from 'fs';
 import _ from 'underscore';
 import op from 'object-path';
 import PLUGIN_ROUTES from './routes.js';
-import SDK from '@atomic-reactor/actinium-core/lib/settings.js';
+import SDK from '@atomic-reactor/actinium-core/lib/setting.js';
+
 const pkg = JSON.parse(fs.readFileSync('package.json'));
 
 const MOD = async () => {
