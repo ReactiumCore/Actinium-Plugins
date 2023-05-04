@@ -14,8 +14,7 @@ const __pkg = fs.readJsonSync(path.normalize(`${__dirname}/package.json`));
 const ENUMS = {
     SEARCH_LENGTH: 4,
     REQUIRED: ['title'],
-    NAMESPACE:
-        Event.CONTENT_NAMESPACE || '9f85eb4d-777b-4213-b039-fced11c2dbae',
+    NAMESPACE: ENV.CONTENT_NAMESPACE || '9f85eb4d-777b-4213-b039-fced11c2dbae',
     ERROR: {
         SEARCH_LENGTH: 'title paramater must be 4 characters or more',
         REQUIRED: 'is a required parameter',
@@ -106,6 +105,8 @@ class SDK {
                 }
             }
 
+            qry.descending('updatedAt');
+
             await Actinium.Hook.run('content-query', {
                 query: qry,
                 params,
@@ -126,6 +127,9 @@ class SDK {
 
             const index = page * limit - limit;
             qry.skip(index);
+
+            qry.include('type');
+            qry.include('user');
 
             // Search
             const results = await qry.find(options);
@@ -161,6 +165,8 @@ class SDK {
             } else if (oid) {
                 qry.equalTo('objectId', oid);
             }
+
+            qry.include('type');
 
             const where = op.get(JSON.parse(JSON.stringify(qry)), 'where', {});
 
