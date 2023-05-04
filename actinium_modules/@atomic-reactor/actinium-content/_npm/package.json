@@ -1,0 +1,19 @@
+{
+  "actinium": {
+    "version": ">5.0.0"
+  },
+  "reactium": {
+    "version": ">=5.0.0"
+  },
+  "type": "module",
+  "name": "@atomic-reactor/actinium-content",
+  "version": "5.1.1",
+  "description": "Plugn for managing Actinium content",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "author": "Reactium LLC"
+}
