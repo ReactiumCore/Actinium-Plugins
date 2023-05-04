@@ -8,7 +8,7 @@ export default {
     update: {
         package: {
             dependencies: {
-                add: {'parse-server': '^6.1.0-alpha.7'},
+                add: { 'parse-server': '^6.1.0-alpha.7' },
                 remove: [],
             },
             devDependencies: {
@@ -37,25 +37,21 @@ export default {
                     '@atomic-reactor/actinium-reset': '5.0.1',
                     '@atomic-reactor/actinium-roles': '5.0.1',
                     '@atomic-reactor/actinium-route': '5.0.1',
-                    '@atomic-reactor/actinium-search': '5.0.1',
                     '@atomic-reactor/actinium-settings': '5.0.1',
                     '@atomic-reactor/actinium-taxonomy': '5.0.1',
                     '@atomic-reactor/actinium-type': '5.0.1',
                     '@atomic-reactor/actinium-users': '5.0.1',
                 },
-                remove: ['@actinium-reactor/actinium-media'],
+                remove: [
+                    '@actinium-reactor/actinium-media',
+                    '@atomic-reactor/actinium-search',
+                ],
             },
         },
         files: {
             add: [
                 {
                     overwrite: true,
-                    version: '<=3.0.0',
-                    destination: '/src/index.js',
-                    source: '/tmp/update/src/index.js',
-                },
-                {
-                    overwrite: false,
                     version: '>=3.0.1',
                     destination: '/src/index.js',
                     source: '/tmp/update/src/index.js',
