@@ -3,8 +3,12 @@
  * @type {Object}
  */
 import fs from 'node:fs';
+import path from 'node:path';
+import { dirname } from '@atomic-reactor/dirname';
 
-const pkg = JSON.parse(fs.readFileSync('package.json'));
+const pkg = JSON.parse(
+    fs.readFileSync(path.join(dirname(import.meta.url), 'package.json')),
+);
 
 export default {
     version: pkg.version,
