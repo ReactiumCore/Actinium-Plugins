@@ -2,8 +2,12 @@
  * Use liberally for additional core configuration.
  * @type {Object}
  */
+import fs from 'node:fs';
+
+const pkg = JSON.parse(fs.readFileSync('package.json'));
+
 export default {
-    version: '5.1.1',
+    version: pkg.version,
     semver: '^5.0.0',
     update: {
         package: {
@@ -26,7 +30,7 @@ export default {
                     '@atomic-reactor/actinium-blueprint': '5.0.1',
                     '@atomic-reactor/actinium-capability': '5.0.1',
                     '@atomic-reactor/actinium-component-manager': '5.0.1',
-                    '@atomic-reactor/actinium-content': '5.1.1',
+                    '@atomic-reactor/actinium-content': '5.1.3',
                     '@atomic-reactor/actinium-env': '5.0.1',
                     '@atomic-reactor/actinium-fs-adapter': '5.0.1',
                     '@atomic-reactor/actinium-io': '5.0.1',
@@ -35,7 +39,7 @@ export default {
                     '@atomic-reactor/actinium-pulse': '5.0.1',
                     '@atomic-reactor/actinium-recycle': '5.0.1',
                     '@atomic-reactor/actinium-reset': '5.0.1',
-                    '@atomic-reactor/actinium-roles': '5.0.1',
+                    '@atomic-reactor/actinium-roles': '5.0.3',
                     '@atomic-reactor/actinium-route': '5.0.1',
                     '@atomic-reactor/actinium-settings': '5.0.1',
                     '@atomic-reactor/actinium-taxonomy': '5.0.1',

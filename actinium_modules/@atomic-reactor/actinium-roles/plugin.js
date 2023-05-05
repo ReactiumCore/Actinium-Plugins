@@ -7,7 +7,6 @@ const pkg = JSON.parse(fs.readFileSync('package.json'));
 
 const MOD = async () => {
     const { CloudRunOptions } = Actinium.Utils;
-    const { default: SDK } = await import(`${BASE_DIR}/.core/lib/roles.js`);
 
     const COLLECTION = Parse.Role;
 

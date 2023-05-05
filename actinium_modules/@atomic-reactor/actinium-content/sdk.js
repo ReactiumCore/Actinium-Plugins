@@ -195,6 +195,7 @@ class SDK {
         };
 
         return async (params, options) => {
+            console.log(options);
             // Fetch the Type object if value is a string
             let type = op.get(params, 'type');
             type = await this.utils.type(type);
@@ -236,7 +237,7 @@ class SDK {
             const saved = await obj.save(null, options);
 
             // Return a fetched version so we get any afterFind mutations
-            return saved.fetch({ useMasterKey: true });
+            return saved.fetch({ useMasterKey: true }, options);
         };
     }
 
@@ -319,13 +320,13 @@ class SDK {
             }
 
             // Generate the ACL
-            const ACL = user ? new Actinium.ACL(user) : new Actinium.ACL();
+            const ACL = user ? new Actinium.ACL(user.id) : new Actinium.ACL();
             ACL.setPublicReadAccess(true);
             ACL.setRoleReadAccess('super-admin', true);
             ACL.setRoleWriteAccess('super-admin', true);
             ACL.setRoleReadAccess('administrator', true);
             ACL.setRoleWriteAccess('administrator', true);
-
+            
             req.object.setACL(ACL);
 
             await Actinium.Hook.run('content-acl', req);
