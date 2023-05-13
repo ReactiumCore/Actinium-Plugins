@@ -153,6 +153,8 @@ const boot = {
 };
 
 const envDev = () => {
+    if (process.env.NODE_ENV !== 'development') return false;
+
     // Check for env.dev.json file
     // Exit if found
     const filePath = path.resolve(path.join(SRC_DIR, 'env.dev.json'));
