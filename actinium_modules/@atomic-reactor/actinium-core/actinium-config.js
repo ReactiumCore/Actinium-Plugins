@@ -12,48 +12,24 @@ const pkg = JSON.parse(
 
 export default {
     version: pkg.version,
-    semver: '^5.0.0',
+    semver: '^5.1.0',
     update: {
         package: {
             dependencies: {
-                add: { 'parse-server': '^6.1.0-alpha.7' },
+                add: {},
                 remove: [],
             },
             devDependencies: {
-                add: { clipboardy: '^2.3.0' },
-                remove: ['@atomic-reactor/cli', 'camelcase'],
+                add: {},
+                remove: [],
             },
             scripts: {
-                add: {
-                    'plugin:install': 'npx reactium install',
-                },
+                add: {},
                 remove: [],
             },
             actiniumDependencies: {
-                add: {
-                    '@atomic-reactor/actinium-blueprint': '5.0.1',
-                    '@atomic-reactor/actinium-capability': '5.0.1',
-                    '@atomic-reactor/actinium-component-manager': '5.0.1',
-                    '@atomic-reactor/actinium-content': '5.1.3',
-                    '@atomic-reactor/actinium-env': '5.0.1',
-                    '@atomic-reactor/actinium-fs-adapter': '5.0.1',
-                    '@atomic-reactor/actinium-io': '5.0.1',
-                    '@atomic-reactor/actinium-mailer': '5.0.1',
-                    '@atomic-reactor/actinium-plugin-manager': '5.0.1',
-                    '@atomic-reactor/actinium-pulse': '5.0.1',
-                    '@atomic-reactor/actinium-recycle': '5.0.1',
-                    '@atomic-reactor/actinium-reset': '5.0.1',
-                    '@atomic-reactor/actinium-roles': '5.0.3',
-                    '@atomic-reactor/actinium-route': '5.0.1',
-                    '@atomic-reactor/actinium-settings': '5.0.1',
-                    '@atomic-reactor/actinium-taxonomy': '5.0.1',
-                    '@atomic-reactor/actinium-type': '5.0.1',
-                    '@atomic-reactor/actinium-users': '5.0.1',
-                },
-                remove: [
-                    '@actinium-reactor/actinium-media',
-                    '@atomic-reactor/actinium-search',
-                ],
+                add: {},
+                remove: [],
             },
         },
         files: {
