@@ -6,7 +6,7 @@
     "version": "5.0.0"
   },
   "name": "@atomic-reactor/actinium-core",
-  "version": "5.1.5",
+  "version": "5.1.6",
   "description": "Actinium Core",
   "main": "actinium.js",
   "type": "module",
@@ -54,7 +54,6 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "clipboardy": "^3.0.0",
     "eslint": "^8.27.0",
     "husky": "^8.0.2",
     "lint-staged": "^13.0.3",
