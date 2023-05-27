@@ -1,17 +1,17 @@
-import fs from 'fs-extra'; 
-import chalk from 'chalk'; 
-import path from 'node:path'; 
+import fs from 'fs-extra';
+import chalk from 'chalk';
+import path from 'node:path';
 import op from 'object-path';
 import baseENV from './boot.js';
 import Enums from './lib/enums.js';
 import moment from 'moment/moment.js';
-import {fileURLToPath} from 'node:url';
+import { fileURLToPath } from 'node:url';
 import Registry from './lib/utils/registry.js';
 import ACTINIUM_CONFIG from './actinium-config.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const stringToBoolean = val => {
+const stringToBoolean = (val) => {
     if (typeof val === 'string') {
         switch (String(val).toLowerCase()) {
             case 'true':
@@ -25,12 +25,17 @@ const stringToBoolean = val => {
     return val;
 };
 
-const stringToObject = val => (typeof val === 'string' ? JSON.parse(val) : val);
+const stringToObject = (val) =>
+    typeof val === 'string' ? JSON.parse(val) : val;
 
 global.Actinium = {};
 global.ACTINIUM_CONFIG = ACTINIUM_CONFIG;
-global.CORE_DIR = __dirname;
-global.BASE_DIR = path.normalize(path.resolve(path.join(__dirname, '../../..')));
+global.CORE_DIR = path.normalize(
+    path.resolve(path.join(__dirname, 'actinium-core')),
+);
+global.BASE_DIR = path.normalize(
+    path.resolve(path.join(__dirname, '../../..')),
+);
 global.SRC_DIR = path.normalize(path.resolve(path.join(BASE_DIR, 'src')));
 global.APP_DIR = path.normalize(path.resolve(path.join(SRC_DIR, 'app')));
 global.ENV = baseENV.environment;
@@ -71,6 +76,7 @@ const defaults = {
     },
     settings: {},
     static: path.normalize(`${process.cwd()}/public`),
+    masterKeyIps: '["0.0.0.0/0", "::1"]',
 };
 
 // Actinium and Parse Log Level
@@ -137,6 +143,8 @@ ENV.TLS_MODE = ENV.APP_TLS_KEY && ENV.APP_TLS_CERT;
 ENV.RUN_TEST = stringToBoolean(op.get(ENV, 'RUN_TEST', true));
 
 ENV.ACTINIUM_MOUNT = ENV.PARSE_MOUNT;
+
+ENV.MASTER_KEY_IPS = stringToObject(op.get(ENV, 'MASTER_KEY_IPS', defaults.masterKeyIps)); 
 
 const LOG_THRESHOLD = op.get(Enums, ['logLevels', LOG_LEVEL], 0);
 for (const [LEVEL, THRESHOLD] of Object.entries(Enums.logLevels)) {
