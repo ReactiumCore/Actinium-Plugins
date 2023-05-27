@@ -14,8 +14,9 @@
         "heroku-prebuild": "npx reactium install",
         "plugin:install": "npx reactium install"
     },
-    "dependencies": {},
-    "devDependencies": {},
+    "devDependencies": {
+        "prettier": "^2.8.8"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/Atomic-Reactor/Actinium-2.0"

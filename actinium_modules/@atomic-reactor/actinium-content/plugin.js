@@ -87,7 +87,6 @@ const MOD = () => {
      */
     // content-save
     Actinium.Cloud.define(PLUGIN.ID, 'content-save', (req) => {
-        console.log(req.user.id);
         req.params.user = op.get(req.params, 'user', req.user.id);
         return Actinium.Content.save(req.params, CloudRunOptions(req));
     });

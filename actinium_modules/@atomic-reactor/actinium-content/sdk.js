@@ -195,7 +195,6 @@ class SDK {
         };
 
         return async (params, options) => {
-            console.log(options);
             // Fetch the Type object if value is a string
             let type = op.get(params, 'type');
             type = await this.utils.type(type);
