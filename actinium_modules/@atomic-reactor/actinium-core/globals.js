@@ -30,9 +30,7 @@ const stringToObject = (val) =>
 
 global.Actinium = {};
 global.ACTINIUM_CONFIG = ACTINIUM_CONFIG;
-global.CORE_DIR = path.normalize(
-    path.resolve(path.join(__dirname, 'actinium-core')),
-);
+global.CORE_DIR = __dirname;
 global.BASE_DIR = path.normalize(
     path.resolve(path.join(__dirname, '../../..')),
 );
@@ -144,7 +142,9 @@ ENV.RUN_TEST = stringToBoolean(op.get(ENV, 'RUN_TEST', true));
 
 ENV.ACTINIUM_MOUNT = ENV.PARSE_MOUNT;
 
-ENV.MASTER_KEY_IPS = stringToObject(op.get(ENV, 'MASTER_KEY_IPS', defaults.masterKeyIps)); 
+ENV.MASTER_KEY_IPS = stringToObject(
+    op.get(ENV, 'MASTER_KEY_IPS', defaults.masterKeyIps),
+);
 
 const LOG_THRESHOLD = op.get(Enums, ['logLevels', LOG_LEVEL], 0);
 for (const [LEVEL, THRESHOLD] of Object.entries(Enums.logLevels)) {
