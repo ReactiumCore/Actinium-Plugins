@@ -325,7 +325,7 @@ class SDK {
             ACL.setRoleWriteAccess('super-admin', true);
             ACL.setRoleReadAccess('administrator', true);
             ACL.setRoleWriteAccess('administrator', true);
-            
+
             req.object.setACL(ACL);
 
             await Actinium.Hook.run('content-acl', req);
@@ -525,6 +525,61 @@ class SDK {
 
                 return user;
             },
+        };
+    }
+
+    get collectionSearch() {
+        return async (params, options) => {
+            const { collection, search, limit = 20, page = 1 } = params;
+
+            if (!collection) {
+                throw new Error('collection is a required parameter');
+            }
+
+            if (!search) {
+                throw new Error('search is a required function');
+            }
+
+            const skip = page * limit - limit;
+
+            let qry = new Actinium.Query(collection);
+
+            await Actinium.Hook.run('content-editor-collection-search-query', {
+                query: qry,
+                collection,
+                options,
+                search,
+            });
+
+            const count = await qry.count(options);
+
+            const pages = Math.ceil(count / limit);
+
+            qry.limit(limit);
+            qry.skip(skip);
+
+            let results = await qry.find(options);
+            results = results.map((item) => item.toJSON());
+
+            const hooked = await Actinium.Hook.run(
+                'content-editor-collection-search-results',
+                {
+                    query: qry,
+                    collection,
+                    options,
+                    search,
+                },
+                results,
+            );
+
+            return {
+                page,
+                pages,
+                count,
+                limit,
+                index: skip,
+                results: _.last(Object.values(hooked)),
+            };
         };
     }
 }

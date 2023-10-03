@@ -33,6 +33,14 @@ export default [
                 type: 'Pointer',
                 targetClass: '_User',
             },
+            parent: {
+                type: 'Pointer',
+                targetClass: 'Content',
+            },
+            children: {
+                type: 'Relation',
+                targetClass: 'Content',
+            }
         },
         actions: {
             addField: false,

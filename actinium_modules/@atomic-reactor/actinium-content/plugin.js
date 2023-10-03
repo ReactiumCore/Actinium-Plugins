@@ -80,6 +80,39 @@ const MOD = () => {
         });
     });
 
+    Actinium.Hook.register(
+        'content-editor-collection-search-query',
+        ({ query, collection, search }) => {
+            if (collection === '_User') {
+                const isEmail = String(search).indexOf('@') > -1;
+                if (!isEmail) {
+                    const [fname, lname] = String(search).trim().split(' ');
+                    if (fname) query.matches('fname', new RegExp(fname, 'gi'));
+                    if (lname) query.matches('lname', new RegExp(lname, 'gi'));
+                } else {
+                    query.matches('email', String(search).trim());
+                }
+            }
+        },
+    );
+
+    Actinium.Hook.register(
+        'content-editor-collection-search-results',
+        ({ collection }, results) => {
+            if (collection === '_User') {
+                return results.map((item) => ({
+                    objectId: item.objectId,
+                    image: op.get(item, 'avatar', '/assets/images/avatar.png'),
+                    label: _.compact([
+                        op.get(item, 'fname'),
+                        op.get(item, 'lname'),
+                    ]).join(' '),
+                }));
+            }
+        },
+        -100000,
+    );
+
     /**
      * ----------------------------------------------------------------------------
      * Cloud Functions
@@ -114,6 +147,14 @@ const MOD = () => {
     // content-exists
     Actinium.Cloud.define(PLUGIN.ID, 'content-exists', (req) =>
         Actinium.Content.exists(req.params, CloudRunOptions(req)),
+    );
+
+    // content-editor-collection-search
+    Actinium.Cloud.define(
+        PLUGIN.ID,
+        'content-editor-collection-search',
+        (req) =>
+            Actinium.Content.collectionSearch(req.params, CloudRunOptions(req)),
     );
 
     /**
