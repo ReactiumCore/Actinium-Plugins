@@ -40,6 +40,9 @@ export default [
             children: {
                 type: 'Relation',
                 targetClass: 'Content',
+            },
+            file: {
+                type: 'File',
             }
         },
         actions: {

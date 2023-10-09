@@ -156,7 +156,7 @@ class SDK {
             const type = op.get(params, 'type');
             let uuid = op.get(params, 'uuid');
 
-            if (slug && type) {
+            if (slug && type && !uuid) {
                 uuid = this.utils.genUUID(type, slug);
             }
 
@@ -210,7 +210,7 @@ class SDK {
             }
 
             // Generate the uuid from the type.machineName and slug
-            if (type && slug) {
+            if (type && slug && !op.get(params, 'uuid')) {
                 op.set(
                     params,
                     'uuid',

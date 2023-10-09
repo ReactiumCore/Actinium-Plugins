@@ -103,6 +103,7 @@ ENV.LIVE_QUERY_SETTINGS = stringToObject(op.get(ENV, 'LIVE_QUERY_SETTINGS'));
 ENV.PARSE_DASHBOARD_ALLOW_INSECURE_HTTP = stringToBoolean(
     op.get(ENV, 'PARSE_DASHBOARD_ALLOW_INSECURE_HTTP', true),
 );
+ENV.MAX_UPLOAD_SIZE = op.get(ENV, 'MAX_UPLOAD_SIZE', '50mb');
 ENV.NO_PARSE = stringToBoolean(op.get(ENV, 'NO_PARSE', false));
 ENV.NO_DOCS = stringToBoolean(op.get(ENV, 'NO_DOCS', false));
 ENV.EXPRESS_OPTIONS = stringToObject(
