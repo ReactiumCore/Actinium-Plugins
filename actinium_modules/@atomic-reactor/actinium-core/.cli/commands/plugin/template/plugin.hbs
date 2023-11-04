@@ -13,7 +13,7 @@ import PLUGIN_SCHEMA from './schema.js';
 import PLUGIN_BLUEPRINTS from './blueprints.js';
 {{/if}}
 
-export default () => {
+export default (() => {
     const { CloudRunOptions } = Actinium.Utils;
 
     const PLUGIN = {
@@ -241,4 +241,4 @@ export default () => {
     {{/each}}
     {{/if}}
 
-}(); 
+})(); 
