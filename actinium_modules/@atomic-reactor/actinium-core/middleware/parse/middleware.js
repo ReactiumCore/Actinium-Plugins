@@ -103,9 +103,15 @@ Actinium.Middleware.register('parse', async (app) => {
 
         Hook.runSync('parse-dashboard-config', dashboardConfig);
 
-        const dashboard = new ParseDashboard(dashboardConfig, {
+        const dashboardOptions = {
             allowInsecureHTTP: ENV.PARSE_DASHBOARD_ALLOW_INSECURE_HTTP,
-        });
+            cookieSessionSecret:
+                'RhbhlE9ze74MALtA2UtqqZzglN2oWgQ0a7jGSZt4sY6eIXeN0yHG7my0dYpA93cl',
+        };
+
+        Hook.runSync('parse-dashboard-config', dashboardOptions);
+
+        const dashboard = new ParseDashboard(dashboardConfig, dashboardOptions);
 
         app.use(ENV.PARSE_DASHBOARD_MOUNT, dashboard);
     }
