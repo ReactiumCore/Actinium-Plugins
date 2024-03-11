@@ -21,6 +21,7 @@ const parseConfig = (hook) => {
         publicServerURL: ENV.PUBLIC_SERVER_URI + ENV.PARSE_MOUNT,
         allowClientClassCreation: ENV.PARSE_ALLOW_CLIENT_CLASS_CREATION,
         masterKeyIps: ENV.MASTER_KEY_IPS,
+        maxUploadSize: ENV.MAX_UPLOAD_SIZE,
     };
 
     config.filesAdapter = FileAdapter.getProxy(config);
