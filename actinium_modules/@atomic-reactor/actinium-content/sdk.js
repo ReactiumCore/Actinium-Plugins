@@ -209,34 +209,33 @@ class SDK {
                 op.set(params, 'slug', slug);
             }
 
-            // Generate the uuid from the type.machineName and slug
-            if (type && slug) {
-                op.set(
-                    params,
-                    'uuid',
-                    this.utils.genUUID(type.get('machineName'), slug),
-                );
-            }
-
             params = sanitize(params);
             await Actinium.Hook.run('content-save-sanitize', params);
 
-            const obj = await this.retrieve(
-                { uuid: op.get(params, 'uuid') },
-                null,
-                true,
-            );
+            try {
+                const obj = await this.retrieve(
+                    { uuid: op.get(params, 'uuid') },
+                    options,
+                    true,
+                );
 
-            Object.entries(params).forEach(([k, v]) => {
-                if (v === null || v === undefined) obj.unset(k);
-                else obj.set(k, v);
-            });
+                Object.entries(params).forEach(([k, v]) => {
+                    if (v === null || v === undefined) obj.unset(k);
+                    else obj.set(k, v);
+                });
 
-            // Save
-            const saved = await obj.save(null, options);
-
-            // Return a fetched version so we get any afterFind mutations
-            return saved.fetch({ useMasterKey: true }, options);
+                // Save
+                try {
+                    const saved = await obj.save(null, options);
+                    return saved.fetch(options);
+                } catch (err) {
+                    console.log(2, err);
+                    return {};
+                }
+            } catch (err) {
+                console.log(1, err);
+                return {};
+            }
         };
     }
 
@@ -319,12 +318,20 @@ class SDK {
             }
 
             // Generate the ACL
-            const ACL = user ? new Actinium.ACL(user.id) : new Actinium.ACL();
-            ACL.setPublicReadAccess(true);
-            ACL.setRoleReadAccess('super-admin', true);
-            ACL.setRoleWriteAccess('super-admin', true);
-            ACL.setRoleReadAccess('administrator', true);
-            ACL.setRoleWriteAccess('administrator', true);
+            const ACL = req.object.getACL() || new Actinium.ACL();
+
+            ACL.setPublicReadAccess(false);
+            ACL.setPublicWriteAccess(false);
+
+            if (user) {
+                ACL.setReadAccess(user.id, true);
+                ACL.setWriteAccess(user.id, true);
+            }
+
+            ['super-admin', 'administrator'].forEach((role) => {
+                ACL.setRoleReadAccess(role, true);
+                ACL.setRoleWriteAccess(role, true);
+            });
 
             req.object.setACL(ACL);
 
@@ -355,15 +362,9 @@ class SDK {
                 req.object.set('slug', this.utils.genSlug(title));
             }
 
-            // Generate the uuid from the type.machineName and slug
-            if (type) {
-                req.object.set(
-                    'uuid',
-                    this.utils.genUUID(
-                        type.get('machineName'),
-                        req.object.get('slug'),
-                    ),
-                );
+            // Generate the uuid
+            if (!req.object.get('uuid')) {
+                req.object.set('uuid', uuid());
             }
 
             // Generate the data object
@@ -525,61 +526,6 @@ class SDK {
 
                 return user;
             },
-        };
-    }
-
-    get collectionSearch() {
-        return async (params, options) => {
-            const { collection, search, limit = 20, page = 1 } = params;
-
-            if (!collection) {
-                throw new Error('collection is a required parameter');
-            }
-
-            if (!search) {
-                throw new Error('search is a required function');
-            }
-
-            const skip = page * limit - limit;
-
-            let qry = new Actinium.Query(collection);
-
-            await Actinium.Hook.run('content-editor-collection-search-query', {
-                query: qry,
-                collection,
-                options,
-                search,
-            });
-
-            const count = await qry.count(options);
-
-            const pages = Math.ceil(count / limit);
-
-            qry.limit(limit);
-            qry.skip(skip);
-
-            let results = await qry.find(options);
-            results = results.map((item) => item.toJSON());
-
-            const hooked = await Actinium.Hook.run(
-                'content-editor-collection-search-results',
-                {
-                    query: qry,
-                    collection,
-                    options,
-                    search,
-                },
-                results,
-            );
-
-            return {
-                page,
-                pages,
-                count,
-                limit,
-                index: skip,
-                results: _.last(Object.values(hooked)),
-            };
         };
     }
 }
