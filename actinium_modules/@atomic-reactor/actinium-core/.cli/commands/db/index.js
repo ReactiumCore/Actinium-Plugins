@@ -3,9 +3,10 @@
  * Imports
  * -----------------------------------------------------------------------------
  */
-import GENERATOR from './generator.js';
+import actionsFactory from './actions.js';
 
-const { chalk, message, op, prettier } = arcli;
+const { chalk, message, op, prettier, generator, Spinner } = arcli;
+const actions = actionsFactory(Spinner);
 
 /**
  * NAME String
@@ -194,7 +195,7 @@ const ACTION = ({ opt, props }) => {
         });
     })
         .then(() => CONFIRM({ props, params }))
-        .then(() => GENERATOR({ params, props }))
+        .then(() => generator({ actions, params, props }))
         .then(() => prompt.stop())
         .then(() => console.log(''))
         .catch((err) => {
@@ -224,7 +225,4 @@ const COMMAND = ({ program, props }) =>
  * @param props Object The CLI props passed from the calling class `arcli.js`.
  * @since 2.0.0
  */
-export {
-    COMMAND,
-    NAME,
-};
+export { COMMAND, NAME };

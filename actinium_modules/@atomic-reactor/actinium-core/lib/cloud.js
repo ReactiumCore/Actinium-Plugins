@@ -1,12 +1,15 @@
 import path from 'path';
 import chalk from 'chalk';
-import { globbySync as globby } from '../lib/globby-patch.js';
+import {
+    globbySync as globby,
+    normalizeImportPath,
+} from '../lib/globby-patch.js';
 
 const Cloud = { ...Parse.Cloud };
 
 Cloud.info = () => {
     BOOT('');
-    BOOT(chalk.cyan('Loading Cloud functions')); 
+    BOOT(chalk.cyan('Loading Cloud functions'));
 
     CLOUD_FUNCTIONS.forEach(({ name }) => {
         if (!name) return;
@@ -21,7 +24,7 @@ Cloud.init = async () => {
     // Load cloud functions
     global.CLOUD_FUNCTIONS = await Promise.all(
         files.map((item) => {
-            const p = path.normalize(item);
+            const p = normalizeImportPath(item);
             const name = String(path.basename(item)).split('.').shift();
 
             output.push({ name, path: p });
