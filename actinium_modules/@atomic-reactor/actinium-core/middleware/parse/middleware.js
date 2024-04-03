@@ -14,7 +14,7 @@ const parseConfig = (hook) => {
         sessionLength: 31536000000,
         databaseURI: ENV.DATABASE_URI,
         allowExpiredAuthDataToken: true,
-        cloud: ACTINIUM_DIR + '/cloud.cjs',
+        cloud: () => {}, // ACTINIUM_DIR + '/cloud.cjs', deprecated
         serverURL: ENV.SERVER_URI + ENV.PARSE_MOUNT,
         directAccess: ENV.PARSE_FILES_DIRECT_ACCESS,
         preserveFileName: ENV.PARSE_PRESERVE_FILENAME,
