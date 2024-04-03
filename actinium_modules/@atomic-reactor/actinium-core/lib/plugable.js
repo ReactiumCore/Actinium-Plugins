@@ -4,14 +4,17 @@ import semver from 'semver';
 import op from 'object-path';
 import path from 'node:path';
 import semverValidRange from 'semver/ranges/valid.js';
-import { globbySync as globby } from '../lib/globby-patch.js';
+import {
+    globbySync as globby,
+    normalizeImportPath,
+} from '../lib/globby-patch.js';
 
 const exp = {};
 const blacklist = [];
 const COLLECTION = 'Plugin';
 
 const loader = async (p) => {
-    const plugin = await import(path.normalize(p));
+    const plugin = await import(normalizeImportPath(p));
 
     const ID = op.get(plugin, 'ID');
     if (ID) {

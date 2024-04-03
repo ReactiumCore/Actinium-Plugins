@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import _ from 'underscore';
 import op from 'object-path';
 import ActionSequence from 'action-sequence';
-import { globbySync as globby } from './globby-patch.js';
+import { globbySync as globby, normalizeImportPath } from './globby-patch.js';
 
 const matches = [
     'Actinium.Middleware.register',
@@ -52,6 +52,7 @@ mw.init = async (app) => {
     await Promise.all(
         globby(ENV.GLOB_MIDDLEWARE)
             .filter((file) => isMiddleware(fs.readFileSync(file, 'utf8')))
+            .map(normalizeImportPath)
             .map((file) => import(file)),
     );
 

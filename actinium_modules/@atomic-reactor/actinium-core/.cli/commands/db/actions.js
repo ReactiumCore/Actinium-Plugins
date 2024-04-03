@@ -17,7 +17,7 @@ export default (spinner) => {
                     ? 'env.remote.json'
                     : 'env.json';
 
-            cwd = op.get(props, 'cwd');
+            const cwd = op.get(props, 'cwd');
             env = path.normalize(
                 _.compact([cwd, 'src', fname])
                     .join('/')
@@ -27,7 +27,7 @@ export default (spinner) => {
         },
         env: async () => {
             message(`Fetching ${chalk.cyan(fname)}...`);
-            pkg = await import(env, { assert: { type: 'json' } });
+            pkg = fs.readJsonSync(env);
         },
         update: ({ params }) => {
             message(`Updating ${chalk.cyan(fname)}...`);
@@ -45,7 +45,7 @@ export default (spinner) => {
                 );
             }
 
-            fs.writeJsonSync(env, pkg);
+            fs.writeFileSync(env, JSON.stringify(pkg, null, 2), 'utf8');
         },
     };
 };
