@@ -6,7 +6,7 @@
     "version": "5.0.0"
   },
   "name": "@atomic-reactor/actinium-core",
-  "version": "5.1.15",
+  "version": "5.1.16",
   "description": "Actinium Core",
   "main": "actinium.js",
   "type": "module",
@@ -59,8 +59,7 @@
     "husky": "^8.0.2",
     "lint-staged": "^13.0.3",
     "nodemon": "^2.0.20",
-    "prettier": "^2.7.1",
-    "reactium": "^3.0.11"
+    "prettier": "^2.7.1"
   },
   "directories": {
     "lib": "lib"
