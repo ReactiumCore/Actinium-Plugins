@@ -3,7 +3,7 @@ import _ from 'underscore';
 import op from 'object-path';
 import path from 'node:path';
 import slugify from 'slugify';
-import { v5 as uuid } from 'uuid';
+import { v4 as uuid } from 'uuid';
 import PLUGIN_SCHEMA from './schema.js';
 import { dirname } from '@atomic-reactor/dirname';
 
@@ -200,15 +200,6 @@ class SDK {
             type = await this.utils.type(type);
             op.set(params, 'type', type);
 
-            // Generate the slug from the title
-            let slug = op.get(params, 'slug');
-            const title = op.get(params, 'title');
-
-            if (title && !slug) {
-                slug = this.utils.genSlug(title);
-                op.set(params, 'slug', slug);
-            }
-
             params = sanitize(params);
             await Actinium.Hook.run('content-save-sanitize', params);
 
@@ -294,8 +285,6 @@ class SDK {
                 required: ENUMS.REQUIRED,
             };
 
-            await Actinium.Hook.run('content-before-save', req);
-
             // Fetch the Type object
             let type = req.object.get('type');
             type = await this.utils.type(type);
@@ -305,6 +294,8 @@ class SDK {
             }
 
             req.object.set('type', type);
+
+            await Actinium.Hook.run('content-before-save', req);
 
             // Set user value
             let user = await this.utils.userFromString(
@@ -356,15 +347,14 @@ class SDK {
                 req.object.set('status', status);
             }
 
-            // Generate the slug from the title
-            if (!req.object.get('slug')) {
-                const title = req.object.get('title');
-                req.object.set('slug', this.utils.genSlug(title));
-            }
-
             // Generate the uuid
             if (!req.object.get('uuid')) {
                 req.object.set('uuid', uuid());
+            }
+
+            // Generate the slug from the uuid
+            if (!req.object.get('slug')) {
+                req.object.set('slug', req.object.get('uuid'));
             }
 
             // Generate the data object
