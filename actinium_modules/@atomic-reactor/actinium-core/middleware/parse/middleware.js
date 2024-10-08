@@ -10,6 +10,7 @@ const parseConfig = (hook) => {
         appId: ENV.APP_ID,
         appName: ENV.APP_NAME,
         masterKey: ENV.MASTER_KEY,
+        masterKeyIps: ENV.MASTER_KEY_IPS,
         enforcePrivateUsers: false,
         sessionLength: 31536000000,
         databaseURI: ENV.DATABASE_URI,
@@ -20,7 +21,6 @@ const parseConfig = (hook) => {
         preserveFileName: ENV.PARSE_PRESERVE_FILENAME,
         publicServerURL: ENV.PUBLIC_SERVER_URI + ENV.PARSE_MOUNT,
         allowClientClassCreation: ENV.PARSE_ALLOW_CLIENT_CLASS_CREATION,
-        masterKeyIps: ENV.MASTER_KEY_IPS,
         maxUploadSize: ENV.MAX_UPLOAD_SIZE,
     };
 
@@ -82,6 +82,7 @@ Actinium.Middleware.register('parse', async (app) => {
             appId,
             appName,
             masterKey,
+            masterKeyIps,
             sessionLength,
             serverURL,
             publicServerURL,
@@ -95,6 +96,7 @@ Actinium.Middleware.register('parse', async (app) => {
                     appId,
                     appName,
                     masterKey,
+                    masterKeyIps,
                     sessionLength,
                     serverURL,
                     publicServerURL,
@@ -102,15 +104,14 @@ Actinium.Middleware.register('parse', async (app) => {
             ],
         };
 
-        Hook.runSync('parse-dashboard-config', dashboardConfig);
-
         const dashboardOptions = {
             allowInsecureHTTP: ENV.PARSE_DASHBOARD_ALLOW_INSECURE_HTTP,
             cookieSessionSecret:
                 'RhbhlE9ze74MALtA2UtqqZzglN2oWgQ0a7jGSZt4sY6eIXeN0yHG7my0dYpA93cl',
         };
 
-        Hook.runSync('parse-dashboard-config', dashboardOptions);
+        Hook.runSync('parse-dashboard-config', dashboardConfig);
+        Hook.runSync('parse-dashboard-config-options', dashboardOptions);
 
         const dashboard = new ParseDashboard(dashboardConfig, dashboardOptions);
 
