@@ -80,7 +80,7 @@ Hooks are synchronous and will execute in the order they are registered unless t
  * @apiParam (Hooks) user-before-find Triggered when the `user-find` cloud function is called.
  * @apiParam (Hooks) user-before-login Triggered before a sign in attempt.
  * @apiParam (Hooks) user-before-save Triggered after a Parse.User object is saved.
- * @apiParam (Hooks) user-fetch Triggered when a user is fetched from the server. The fetched `Parse.User` object is passed to the hook.
+ * @apiParam (Hooks) user-fetch Triggered when a users are fetched from the server. The fetched `Parse.User` objects are passed to the hook as an Array.
  * @apiParam (Hooks) warning Triggered when the startup warnings are logged.
  */
 

@@ -40,6 +40,10 @@ const MOD = () => {
             return objects;
         }
 
+        /*
+         * ---------------------------------------------------------------------------------------------------
+            // TODO: Figure out a better way to implement this w/o iterating over the objects on every find
+         * ---------------------------------------------------------------------------------------------------
         for (let i = 0; i < objects.length; i++) {
             let user = objects[i];
 
@@ -52,6 +56,9 @@ const MOD = () => {
             user.set('capabilities', capabilities);
             objects[i] = user;
         }
+        */
+
+        await Actinium.Hook.run('user-fetch', objects);
 
         return Promise.resolve(objects);
     };
