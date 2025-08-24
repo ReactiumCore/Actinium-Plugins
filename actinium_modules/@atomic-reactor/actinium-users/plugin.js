@@ -84,6 +84,23 @@ const MOD = () => {
         return Actinium.User.retrieve(req.params, options);
     };
 
+    const roles = async (req) => {
+        if (!req.user) return [];
+
+        const options = { useMaskterKey: true, json: false };
+        const qry = new Actinium.Query(Actinium.Role);
+        qry.equalTo('users', req.user);
+        qry.descending('level');
+
+        const results = await qry.find(options);
+
+        return results.reduce((roles, item) => {
+            roles['anonymous'] = 0;
+            roles[item.get('name')] = item.get('level');
+            return roles;
+        }, {});
+    };
+
     const save = (req) => {
         const options = CloudRunOptions(req);
         return Actinium.User.save(req.params, options);
@@ -250,6 +267,8 @@ const MOD = () => {
     Actinium.Cloud.define(PLUGIN.ID, 'user-list', find);
 
     Actinium.Cloud.define(PLUGIN.ID, 'user-retrieve', retrieve);
+
+    Actinium.Cloud.define(PLUGIN.ID, 'user-roles', roles);
 
     Actinium.Cloud.define(PLUGIN.ID, 'user-save', save);
 
