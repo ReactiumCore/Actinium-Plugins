@@ -70,7 +70,7 @@ class SDK {
             let title = op.get(params, 'title');
             if (_.isString(title)) {
                 this.utils.assertSearchLength(title);
-                qry.matches('title', new RegExp(title));
+                qry.matches('title', new RegExp(title, 'gi'));
             }
 
             // status
@@ -345,6 +345,11 @@ class SDK {
                 );
 
                 req.object.set('status', status);
+            }
+
+            if (req.object.get('status')) {
+                const status = req.object.get('status');
+                req.object.set('status', String(status).toUpperCase());
             }
 
             // Generate the uuid
