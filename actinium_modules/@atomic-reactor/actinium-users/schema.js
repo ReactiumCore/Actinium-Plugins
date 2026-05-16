@@ -1,27 +1,51 @@
-export default {
-    ACTIONS: {
-        addField: false,
-        create: true,
-        delete: false,
-        retrieve: true,
-        update: true,
-    },
-    SCHEMA: {
-        fname: {
-            type: 'String',
+export default [
+    {
+        collection: '_User',
+        indexes: ['objectId', 'uuid'],
+        schema: {
+            uuid: {
+                type: 'String',
+            },
         },
-        lname: {
-            type: 'String',
-        },
-        avatar: {
-            type: 'String',
-        },
-        meta: {
-            type: 'Object',
-        },
-        prefs: {
-            type: 'Object',
+        actions: {
+            addField: false,
+            create: true,
+            retrieve: true,
+            update: true,
+            delete: true,
         },
     },
-    INDEX: ['fname', 'lname'],
-};
+    {
+        collection: 'User_meta',
+        schema: {
+            user: {
+                type: 'Pointer',
+                targetClass: '_User',
+            },
+            name: { type: 'Object' },
+        },
+        actions: {
+            addField: true,
+            create: true,
+            retrieve: true,
+            update: true,
+            delete: true,
+        },
+    },
+    {
+        collection: 'User_pref',
+        schema: {
+            user: {
+                type: 'Pointer',
+                targetClass: '_User',
+            },
+        },
+        actions: {
+            addField: true,
+            create: true,
+            retrieve: true,
+            update: true,
+            delete: true,
+        },
+    },
+];

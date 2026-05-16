@@ -14,7 +14,6 @@ const parseConfig = (hook) => {
         enforcePrivateUsers: false,
         sessionLength: 31536000000,
         databaseURI: ENV.DATABASE_URI,
-        allowExpiredAuthDataToken: true,
         cloud: () => {}, // ACTINIUM_DIR + '/cloud.cjs', deprecated
         serverURL: ENV.SERVER_URI + ENV.PARSE_MOUNT,
         directAccess: ENV.PARSE_FILES_DIRECT_ACCESS,
@@ -22,6 +21,62 @@ const parseConfig = (hook) => {
         publicServerURL: ENV.PUBLIC_SERVER_URI + ENV.PARSE_MOUNT,
         allowClientClassCreation: ENV.PARSE_ALLOW_CLIENT_CLASS_CREATION,
         maxUploadSize: ENV.MAX_UPLOAD_SIZE,
+        installation: {
+            duplicateDeviceTokenActionEnforceAuth: op.get(
+                ENV,
+                'PARSE_INSTALLATION_DEDUP_ENFORCE_AUTH',
+                true,
+            ),
+        },
+        protectedFieldsSaveResponseExempt: op.get(
+            ENV,
+            'PARSE_PROTECTED_FIELDS_SAVE_RESPONSE_EXEMPT',
+            false,
+        ),
+        protectedFieldsTriggerExempt: op.get(
+            ENV,
+            'PARSE_PROTECTED_FIELDS_TRIGGER_EXEMPT',
+            true,
+        ),
+        protectedFieldsOwnerExempt: op.get(
+            ENV,
+            'PARSE_PROTECTED_FIELDS_OWNER_EXEMPT',
+            false,
+        ),
+        requestComplexity: {
+            includeDepth: op.get(ENV, 'PARSE_REQUEST_INCLUDE_DEPTH', 10),
+            includeCount: op.get(ENV, 'PARSE_REQUEST_INCLUDE_COUNT', 100),
+            subqueryDepth: op.get(ENV, 'PARSE_REQUEST_SUBQUERY_DEPTH', 10),
+            queryDepth: op.get(ENV, 'PARSE_REQUEST_QUERY_DEPTH', 10),
+            graphQLDepth: op.get(ENV, 'PARSE_REQUEST_GRAPHQL_DEPTH', 20),
+            graphQLFields: op.get(ENV, 'PARSE_REQUEST_GRAPHQL_FIELDS', 200),
+            batchRequestLimit: op.get(ENV, 'PARSE_REQUEST_BATCH_LIMIT', 100),
+        },
+        readOnlyMasterKeyIps: op.get(ENV, 'READ_ONLY_MASTER_KEY_IPS', [
+            '127.0.0.1',
+            '::1',
+        ]),
+        pages: {
+            encodePageParamHeaders: op.get(
+                ENV,
+                'PARSE_ENCODE_PAGE_PARAM_HEADERS',
+                true,
+            ),
+        },
+        fileUpload: {
+            enableForPublic: ENV.PARSE_FILE_UPLOAD_PUBLIC,
+            enableForAnonymousUser: ENV.PARSE_FILE_UPLOAD_ANONYMOUS,
+            enableForAuthenticatedUser: op.get(
+                ENV,
+                'PARSE_FILE_UPLOAD_AUTHENTICATED',
+                true,
+            ),
+            allowedFileUrlDomains: op.get(
+                ENV,
+                'PARSE_ALLOWED_FILE_URL_DOMAINS',
+                [],
+            ),
+        },
     };
 
     config.filesAdapter = FileAdapter.getProxy(config);
