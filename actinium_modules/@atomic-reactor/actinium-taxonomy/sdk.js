@@ -31,25 +31,33 @@ const MOD = () => {
 
         Taxonomy.warning = true;
 
+        const createOrRetrieve = async (params) => {
+            try {
+                return await Taxonomy.Type.create(params, options);
+            } catch (e) {
+                if (String(e).includes('slug must be unique')) {
+                    return Taxonomy.Type.retrieve(
+                        { slug: params.slug },
+                        options,
+                    );
+                }
+                throw e;
+            }
+        };
+
         const [cat, tag] = await Promise.all([
-            Taxonomy.Type.create(
-                {
-                    name: 'Category',
-                    slug: 'category',
-                    description: 'Default content taxonomy',
-                    outputType: 'OBJECT',
-                },
-                options,
-            ),
-            Taxonomy.Type.create(
-                {
-                    name: 'Tag',
-                    slug: 'tag',
-                    description: 'Default content taxonomy',
-                    outputType: 'OBJECT',
-                },
-                options,
-            ),
+            createOrRetrieve({
+                name: 'Category',
+                slug: 'category',
+                description: 'Default content taxonomy',
+                outputType: 'OBJECT',
+            }),
+            createOrRetrieve({
+                name: 'Tag',
+                slug: 'tag',
+                description: 'Default content taxonomy',
+                outputType: 'OBJECT',
+            }),
         ]);
 
         const [blog, featured] = await Promise.all([

@@ -74,8 +74,8 @@ Actinium.Setting.get('site.hostname');
 // get object of all site settings
 Actinium.Setting.get('site');
  */
-Setting.get = async (key, defaultValue, options) => {
-    options = options || Actinium.Utils.MasterOptions();
+Setting.get = async (key, defaultValue) => {
+    const options = Actinium.Utils.MasterOptions();
     const [group, ...settingPath] = String(key).split('.');
 
     if (!group) return Setting.load();

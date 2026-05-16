@@ -270,6 +270,11 @@ Collection.load = async (collection = false) => {
 
             let CLP = { ...schema.classLevelPermissions };
 
+            // ACL CLP entries require { read, write } objects, not booleans.
+            // The capability system never manages this key — drop it to avoid
+            // a Parse Server validateCLP error if the stored value is malformed.
+            delete CLP.ACL;
+
             await Actinium.Hook.run('collection-clp', { collection, CLP });
 
             await Actinium.Hook.run('collection-indexes', {

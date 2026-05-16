@@ -1,11 +1,29 @@
-import chalk from 'chalk';
 import _ from 'underscore';
+import chalk from 'chalk';
 import op from 'object-path';
 import { v4 as uuid } from 'uuid';
 
 const COLLECTION = '_User';
 const COLLECTION_ROLE = '_Role';
-const ENUMS = { CACHE: 90000 };
+const COLLECTION_META = 'User_meta';
+const COLLECTION_PREF = 'User_pref';
+
+const ENUMS = {
+    CACHE: 90000,
+    defaultSchema: [
+        'authData',
+        'createdAt',
+        'emailVerified',
+        'objectId',
+        'updatedAt',
+        'uuid',
+        'username',
+        'password',
+        'email',
+        'ACL',
+    ],
+    protectedSchema: [],
+};
 
 /**
  * @api {Object} Actinium.User User
@@ -58,8 +76,7 @@ User.init = async () => {
         password,
         confirm: password,
         email: 'admin@reactium.io',
-        fname: 'Super',
-        lname: 'Admin',
+        uuid: uuid(),
         role: 'super-admin',
     };
 
@@ -164,7 +181,7 @@ User.list = async (params, options) => {
 
     if (search) {
         const regex = new RegExp(search, 'gi');
-        const queries = fields.map(fld => {
+        const queries = fields.map((fld) => {
             const nqry = roleObj
                 ? roleObj.relation('users').query()
                 : new Actinium.Query(COLLECTION);
@@ -180,7 +197,7 @@ User.list = async (params, options) => {
             qry = roleObj.relation('users').query();
         }
 
-        fields.forEach(fld => {
+        fields.forEach((fld) => {
             const val = op.get(params, fld);
             if (val) qry.containedIn(fld, _.flatten([val]));
         });
@@ -193,6 +210,10 @@ User.list = async (params, options) => {
         limit = 1000;
     }
 
+    let response;
+
+    // Cached results
+    /*
     const cacheKey = [
         'users',
         Buffer.from(
@@ -211,7 +232,7 @@ User.list = async (params, options) => {
 
     if (refresh === true) Actinium.Cache.del('users');
 
-    let response = Actinium.Cache.get(cacheKey);
+    response = Actinium.Cache.get(cacheKey);
     if (response && !refresh) {
         await Actinium.Hook.run(
             'user-list-response',
@@ -221,6 +242,7 @@ User.list = async (params, options) => {
         );
         return response;
     }
+    */
 
     const skip = page * limit - limit;
 
@@ -240,7 +262,7 @@ User.list = async (params, options) => {
     let results = await qry.find(options);
     results =
         outputType === 'JSON'
-            ? results.map(item => Actinium.Utils.serialize(item))
+            ? results.map((item) => Actinium.Utils.serialize(item))
             : results;
 
     response = {
@@ -263,7 +285,7 @@ User.list = async (params, options) => {
         op.set(response, 'results', _.indexBy(response.results, indexBy));
     }
 
-    Actinium.Cache.set(cacheKey, response, ENUMS.CACHE);
+    // Actinium.Cache.set(cacheKey, response, ENUMS.CACHE);
 
     return response;
 };
@@ -289,7 +311,7 @@ User.list = async (params, options) => {
  * @apiParam (params) {String} [email] Retrieve by the email address field.
  * @apiParam (hooks) {Hook} user-retrieve-search-fields Mutate the search fields.
 ```
-Arguments: fields:Array, params, options
+Arguments: fields:Object, params, options
 ```
  * @apiParam (hooks) {Hook} user-retrieve-response Mutate the `Parse.User` object before it is returned.
 ```
@@ -297,7 +319,25 @@ Arguments: user:Object, params, options
 ```
  */
 User.retrieve = async (params, options) => {
-    let fields = ['objectId', 'username', 'email'];
+    params.outputType = String(
+        op.get(params, 'outputType', 'JSON'),
+    ).toUpperCase();
+
+    // cached?
+    if (op.get(params, 'objectId') && !op.get(params, 'refresh')) {
+        const cached = Actinium.Cache.get(
+            `UserRetrieve${params.outputType}${params.objectId}`,
+        );
+
+        if (cached) return cached;
+    }
+
+    const qry = new Actinium.Query(COLLECTION);
+
+    const fields = {
+        equalTo: ['objectId', 'uuid', 'email', 'username'],
+    };
+
     await Actinium.Hook.run(
         'user-retrieve-search-fields',
         fields,
@@ -305,35 +345,46 @@ User.retrieve = async (params, options) => {
         options,
     );
 
-    // Shake out parameters.
-    op.del(params, 'search');
-    op.del(params, 'indexBy');
-    const leafs = Array.from(fields);
-    while (leafs.length > 0) {
-        const leaf = leafs.shift();
-        if (op.get(params, leaf)) {
-            while (leafs.length > 0) {
-                const item = leafs.shift();
-                op.del(params, item);
-                op.del(leafs, item);
-            }
-            leafs.push(leaf);
-            break;
-        }
-    }
+    Object.entries(fields).forEach(([func, flds]) => {
+        Object.entries(params).forEach(([k, v]) => {
+            if (!flds.includes(k)) return;
+            qry[func](k, v);
+        });
+    });
 
-    fields = leafs;
+    let user = await qry.first(options);
 
-    op.set(params, 'fieldsHooked', fields);
+    if (!user) return;
 
-    params.outputType = 'OBJECT';
-    const { results = [] } = await User.list(params, options);
+    const ID = user.id;
 
-    const user = _.first(results);
+    const meta = await Actinium.User.Meta.retrieve({ user }, options);
 
     await Actinium.Hook.run('user-retrieve-response', user, params, options);
 
-    return Actinium.Utils.serialize(user);
+    if (params.outputType === 'JSON') {
+        user = Actinium.Utils.serialize(user);
+        user.meta = meta ? meta.toJSON() : {};
+
+        const excludes = [
+            'meta.user',
+            'meta.createdAt',
+            'meta.updatedAt',
+            'meta.ACL',
+            'createdAt',
+            'updatedAt',
+            'ACL',
+        ];
+        excludes.forEach((k) => op.del(user, k));
+    } else {
+        user.meta = meta;
+    }
+
+    user.timestamp = Date.now();
+
+    Actinium.Cache.set(`UserRetrieve${params.outputType}${ID}`, user, 10000);
+
+    return user;
 };
 
 /**
@@ -362,7 +413,10 @@ Arguments: req:Object:Parse.User
  */
 User.save = async (params, options) => {
     // Get the role
-    const role = op.get(params, 'role');
+    const roles = _.chain([op.get(params, 'role'), op.get(params, 'roles')])
+        .flatten()
+        .compact()
+        .value();
 
     // Remove role from params
     op.del(params, 'role');
@@ -386,13 +440,27 @@ User.save = async (params, options) => {
     // Create the user object
     const userObj = new Parse.Object(COLLECTION);
 
+    let schema = _.chain(User.ENUMS.defaultSchema)
+        .without('createdAt', 'updatedAt')
+        .clone()
+        .value();
+
+    await Actinium.Hook.run('user-save-schema', schema);
+
     // Apply parameters to the userObj
     Object.entries(params).forEach(([key, value]) => {
+        if (!schema.includes(key)) return;
+
         if (value === null || !value) {
             userObj.unset(key);
         } else {
             userObj.set(key, value);
         }
+    });
+
+    userObj.set('context', {
+        ...userObj.toJSON(),
+        ...params,
     });
 
     // Save the user
@@ -408,12 +476,21 @@ User.save = async (params, options) => {
 
     // Apply the role
     try {
-        if (role) {
-            await Parse.Cloud.run(
-                'role-user-add',
-                { user: user.id, role },
-                options,
-            ).catch(ERROR);
+        if (roles && user) {
+            const roleActions = [];
+            for (const role of roles) {
+                roleActions.push(
+                    Parse.Cloud.run(
+                        'role-user-add',
+                        { user: user.id, role },
+                        options,
+                    ).catch((err) => {
+                        console.log('user.save() role add', err.message);
+                    }),
+                );
+            }
+
+            await Promise.all(roleActions);
         }
     } catch (err) {
         ERROR(err);
@@ -483,266 +560,113 @@ User.trash = async (params, options) => {
     await userObj.destroy(options);
 };
 
-User.Meta = {};
+class UserMeta {
+    constructor(collection) {
+        this.__collection = collection || COLLECTION_META;
+    }
 
-/**
-* @api {Asynchronous} Actinium.User.Meta.save(params,options) User.Meta.save()
-* @apiGroup Actinium
-* @apiName User.Meta.save
-* @apiDescription Mutate the Parse.User.meta object.
-* @apiParam {Object} params Object containing parameters for retrieving a user and the key value pair to apply to the user meta object.
-* @apiParam {Object} options Parse cloud options object.
-* @apiParam (params) {String} [objectId] Look up the user object by the objectId field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (params) {String} [username] Look up the user object by the username field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (params) {String} [email] Look up the user object by the email field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (params) {Array} keys List of object path keys as strings to delete.
-* @apiParam (hooks) {Hook} user-sensative-fields Mutate the list of sensative (non-public) fields.
-```
-Arguments: fields:Array, params, options
-```
-* @apiParam (hooks) {Hook} user-before-meta-save Triggered before the user update is executed.
-```
-Arguments: meta:Object, prev:Object, user:Parse.User, params, options
-```
-* @apiParam (hooks) {Hook} user-meta-save-response Triggered before the updated user object is returned.
-```
-Arguments: meta:Object, prev:Object, user:Parse.User, params, options
-```
- * @apiExample Usage
-Actinium.User.Meta.delete({ objectId: 'aetlkq25', keys: ['testing', 'out']});
-*/
-User.Meta.delete = async (params, options) => {
-    let keys = op.get(params, 'keys', []);
-    keys = typeof keys === 'string' ? [keys] : keys;
-    keys = keys.map(key => (Array.isArray(key) ? key.join('.') : key));
-    if (keys.length < 1) return;
+    get collection() {
+        return this.__collection;
+    }
 
-    let user = await User.retrieve(_.clone(params), options);
-    if (!user) return;
+    async retrieve({ user }, options) {
+        if (_.isString(user)) {
+            const id = user;
+            user = new Actinium.User(COLLECTION);
+            user.id = id;
+        }
 
-    const currentMeta = op.get(user, 'meta', {});
-    const meta = JSON.parse(JSON.stringify(currentMeta));
+        options = options || { useMasterKey: true };
+        const qry = new Actinium.Query(this.collection);
+        qry.equalTo('user', user);
+        return qry.first(options);
+    }
 
-    keys.forEach(key => op.del(meta, key));
+    /**
+     * @api {Asynchronous} Actinium.User.Meta.update(params,options) User.Meta.update()
+     * @apiGroup Actinium
+     * @apiName User.Meta.update
+     * @apiDescription Mutate the Parse.User.meta object.
+     * @apiParam {Object} params Object containing parameters for retrieving a user and the key value pair to apply to the user meta object.
+     * @apiParam {Object} options Parse cloud options object.
+     * @apiParam (params) {String} [objectId] Look up the user object by the objectId field. See [User.retrieve()](#api-Actinium-User_retrieve).
+     * @apiParam (params) {String} [username] Look up the user object by the username field. See [User.retrieve()](#api-Actinium-User_retrieve).
+     * @apiParam (params) {String} [email] Look up the user object by the email field. See [User.retrieve()](#api-Actinium-User_retrieve).
+     * @apiParam (hooks) {Hook} user-sensative-fields Mutate the list of sensative (non-public) fields.
+        ```
+        Arguments: fields:Array, params, options
+        ```
+     * @apiParam (hooks) {Hook} user-before-meta-save Triggered before the user update is executed.
+        ```
+        Arguments: meta:Object, prev:Object, user:Parse.User, params, options
+        ```
+     * @apiParam (hooks) {Hook} user-meta-save-response Triggered before the updated user object is returned.
+        ```
+        Arguments: meta:Object, prev:Object, user:Parse.User, params, options
+        ```
+     * @apiExample Usage
+        Actinium.User.Meta.update({ objectId: 'aetlkq25', test: 123, out: 456 });
+     */
+    async update(params, options) {
+        options = options || { useMasterKey: true };
 
-    await Actinium.Hook.run(
-        'user-before-meta-save',
-        meta,
-        currentMeta,
-        user,
-        params,
-        options,
-    );
+        params = _.clone(params);
 
-    user = await User.save({ meta, objectId: user.objectId }, options);
+        if (_.isString(op.get(params, 'user'))) {
+            op.set(params, 'objectId', params.user);
+            op.del(params, 'user');
+        }
 
-    await Actinium.Hook.run(
-        'user-meta-save-response',
-        meta,
-        currentMeta,
-        user,
-        params,
-        options,
-    );
+        const user = await User.save(
+            { ...params, outputType: 'OBJECT' },
+            options,
+        );
 
-    return user;
-};
+        return this.retrieve({ user }, options);
+    }
 
-/**
-* @api {Asynchronous} Actinium.User.Meta.update(params,options) User.Meta.update()
-* @apiGroup Actinium
-* @apiName User.Meta.update
-* @apiDescription Mutate the Parse.User.meta object.
-* @apiParam {Object} params Object containing parameters for retrieving a user and the key value pair to apply to the user meta object.
-* @apiParam {Object} options Parse cloud options object.
-* @apiParam (params) {String} [objectId] Look up the user object by the objectId field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (params) {String} [username] Look up the user object by the username field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (params) {String} [email] Look up the user object by the email field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (hooks) {Hook} user-sensative-fields Mutate the list of sensative (non-public) fields.
-```
-Arguments: fields:Array, params, options
-```
-* @apiParam (hooks) {Hook} user-before-meta-save Triggered before the user update is executed.
-```
-Arguments: meta:Object, prev:Object, user:Parse.User, params, options
-```
-* @apiParam (hooks) {Hook} user-meta-save-response Triggered before the updated user object is returned.
-```
-Arguments: meta:Object, prev:Object, user:Parse.User, params, options
-```
-* @apiExample Usage
-Actinium.User.Meta.update({ objectId: 'aetlkq25', test: 123, out: 456 });
-*/
-User.Meta.update = async (params, options) => {
-    let user = await User.retrieve(_.clone(params), options);
+    async delete(params, options) {
+        options = options || { useMasterKey: true };
 
-    if (!user) return;
+        params = _.clone(params);
 
-    // remove sensative params
-    let fields = ['objectId', 'username', 'email', 'fname', 'lname'];
-    await Actinium.Hook.run('user-sensative-fields', fields, params, options);
-    fields.forEach(fld => op.del(params, fld));
+        const keys = _.chain([op.get(params, 'keys', [])])
+            .flatten()
+            .compact()
+            .value();
 
-    const currentMeta = op.get(user, 'meta', {});
+        if (keys.length < 1) return;
 
-    let newMeta = JSON.parse(JSON.stringify(currentMeta));
-    Object.entries(params).forEach(([key, value]) =>
-        op.set(newMeta, key.split(',').join('.'), value),
-    );
-    newMeta = JSON.parse(JSON.stringify(newMeta));
+        if (_.isString(op.get(params, 'user'))) {
+            op.set(params, 'objectId', params.user);
+            op.del(params, 'user');
+        }
 
-    await Actinium.Hook.run(
-        'user-before-meta-save',
-        newMeta,
-        currentMeta,
-        user,
-        params,
-        options,
-    );
+        const user = await User.save(
+            { ...params, outputType: 'OBJECT' },
+            options,
+        );
 
-    user = await User.save({ meta: newMeta, objectId: user.objectId }, options);
+        const obj = await this.retrieve({ user }, options);
 
-    await Actinium.Hook.run(
-        'user-meta-save-response',
-        newMeta,
-        currentMeta,
-        user,
-        params,
-        options,
-    );
+        const excluded = ['createdAt', 'updatedAt', 'objectId', 'ACL', 'user'];
 
-    return user;
-};
+        keys.filter((key) => !excluded.includes(key)).forEach((key) =>
+            obj.unset(key),
+        );
 
-User.Pref = {};
+        return obj.save(null, options);
+    }
+}
 
-/**
-* @api {Asynchronous} Actinium.User.Pref.save(params,options) User.Pref.save()
-* @apiGroup Actinium
-* @apiName User.Pref.save
-* @apiDescription Mutate the Parse.User.pref object.
-* @apiParam {Object} params Object containing parameters for retrieving a user and the key value pair to apply to the user pref object.
-* @apiParam {Object} options Parse cloud options object.
-* @apiParam (params) {String} [objectId] Look up the user object by the objectId field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (params) {String} [username] Look up the user object by the username field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (params) {String} [email] Look up the user object by the email field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (params) {Array} keys List of object path keys as strings to delete.
-* @apiParam (hooks) {Hook} user-sensative-fields Mutate the list of sensative (non-public) fields.
-```
-Arguments: fields:Array, params, options
-```
-* @apiParam (hooks) {Hook} user-before-pref-save Triggered before the user update is executed.
-```
-Arguments: pref:Object, prev:Object, user:Parse.User, params, options
-```
-* @apiParam (hooks) {Hook} user-pref-save-response Triggered before the updated user object is returned.
-```
-Arguments: pref:Object, prev:Object, user:Parse.User, params, options
-```
- * @apiExample Usage
-Actinium.User.Pref.delete({ objectId: 'aetlkq25', keys: ['testing', 'out']});
-*/
-User.Pref.delete = async (params, options) => {
-    let keys = op.get(params, 'keys', []);
-    keys = typeof keys === 'string' ? [keys] : keys;
-    keys = keys.map(key => (Array.isArray(key) ? key.join('.') : key));
-    if (keys.length < 1) return;
+class UserPref extends UserMeta {
+    constructor(collection) {
+        super();
+        this.__collection = collection || COLLECTION_PREF;
+    }
+}
 
-    let user = await User.retrieve(_.clone(params), options);
-    if (!user) return;
-
-    const currentPref = op.get(user, 'pref', {});
-    const pref = JSON.parse(JSON.stringify(currentPref));
-
-    keys.forEach(key => op.del(pref, key));
-
-    await Actinium.Hook.run(
-        'user-before-pref-save',
-        pref,
-        currentPref,
-        user,
-        params,
-        options,
-    );
-
-    user = await User.save({ pref, objectId: user.objectId }, options);
-
-    await Actinium.Hook.run(
-        'user-pref-save-response',
-        pref,
-        currentPref,
-        user,
-        params,
-        options,
-    );
-
-    return user;
-};
-
-/**
-* @api {Asynchronous} Actinium.User.Pref.update(params,options) User.Pref.update()
-* @apiGroup Actinium
-* @apiName User.Pref.update
-* @apiDescription Mutate the Parse.User.pref object.
-* @apiParam {Object} params Object containing parameters for retrieving a user and the key value pair to apply to the user pref object.
-* @apiParam {Object} options Parse cloud options object.
-* @apiParam (params) {String} [objectId] Look up the user object by the objectId field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (params) {String} [username] Look up the user object by the username field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (params) {String} [email] Look up the user object by the email field. See [User.retrieve()](#api-Actinium-User_retrieve).
-* @apiParam (hooks) {Hook} user-sensative-fields Mutate the list of sensative (non-public) fields.
-```
-Arguments: fields:Array, params, options
-```
-* @apiParam (hooks) {Hook} user-before-pref-save Triggered before the user update is executed.
-```
-Arguments: pref:Object, prev:Object, user:Parse.User, params, options
-```
-* @apiParam (hooks) {Hook} user-pref-save-response Triggered before the updated user object is returned.
-```
-Arguments: pref:Object, prev:Object, user:Parse.User, params, options
-```
-* @apiExample Usage
-Actinium.User.Pref.update({ objectId: 'aetlkq25', test: 123, out: 456 });
-*/
-User.Pref.update = async (params, options) => {
-    let user = await User.retrieve(_.clone(params), options);
-
-    if (!user) return;
-
-    // remove sensative params
-    let fields = ['objectId', 'username', 'email', 'fname', 'lname'];
-    await Actinium.Hook.run('user-sensative-fields', fields, params, options);
-    fields.forEach(fld => op.del(params, fld));
-
-    const currentPref = op.get(user, 'pref', {});
-
-    let newPref = JSON.parse(JSON.stringify(currentPref));
-    Object.entries(params).forEach(([key, value]) =>
-        op.set(newPref, key.split(',').join('.'), value),
-    );
-    newPref = JSON.parse(JSON.stringify(newPref));
-
-    await Actinium.Hook.run(
-        'user-before-pref-save',
-        newPref,
-        currentPref,
-        user,
-        params,
-        options,
-    );
-
-    user = await User.save({ pref: newPref, objectId: user.objectId }, options);
-
-    await Actinium.Hook.run(
-        'user-pref-save-response',
-        newPref,
-        currentPref,
-        user,
-        params,
-        options,
-    );
-
-    return user;
-};
+User.Meta = new UserMeta();
+User.Pref = new UserPref();
 
 export default User;

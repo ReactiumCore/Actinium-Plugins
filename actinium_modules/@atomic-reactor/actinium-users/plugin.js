@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import _ from 'underscore';
 import op from 'object-path';
 import PLUGIN_SCHEMA from './schema.js';
 import PLUGIN_ROUTES from './routes.js';
@@ -102,7 +103,10 @@ const MOD = () => {
     };
 
     const save = (req) => {
-        const options = CloudRunOptions(req);
+        const options = req.master
+            ? { useMasterKey: true, ...CloudRunOptions(req) }
+            : CloudRunOptions;
+
         return Actinium.User.save(req.params, options);
     };
 
@@ -119,12 +123,63 @@ const MOD = () => {
         return true;
     };
 
-    const afterSave = (req) => {
-        Actinium.Hook.run('user-after-save', req);
+    const afterSave = async (req) => {
+        let MetaObj =
+            (await Actinium.User.Meta.retrieve({ user: req.object })) ||
+            new Actinium.Object('User_meta');
+
+        if (!MetaObj) return;
+
+        Object.entries(req.context).forEach(([k, v]) => {
+            let value = v;
+            if (!value) {
+                MetaObj.unset(k);
+            } else {
+                MetaObj.set(k, value);
+            }
+        });
+
+        if (!MetaObj.existed()) {
+            const ACL = new Actinium.ACL(req.object);
+            const roles = ['super-admin', 'administrator'];
+            roles.forEach((role) => {
+                ACL.setRoleWriteAccess(role, true);
+                ACL.setRoleReadAccess(role, true);
+            });
+
+            MetaObj.setACL(ACL);
+        }
+
+        MetaObj.set('user', req.object);
+
+        try {
+            await MetaObj.save(null, { useMasterKey: req.master });
+            await Actinium.Hook.run('user-after-save', req);
+        } catch (err) {
+            await Actinium.Hook.run('user-after-save-error', {
+                meta: MetaObj,
+                user: req.object,
+                context: req.context,
+            });
+        }
     };
 
     const beforeSave = async (req) => {
+        req.context = {
+            ..._.clone(req.object.toJSON()),
+            ..._.clone(req.object.get('context') || {}),
+        };
+
+        delete req.context.context;
+
+        let excludes = _.clone(Actinium.User.ENUMS.defaultSchema);
+        await Actinium.Hook.run('user-save-schema', excludes);
+
+        excludes.forEach((k) => op.del(req.context, k));
+
+        req.object.unset('context');
         req.object.unset('confirm');
+
         await Actinium.Hook.run('user-before-save', req);
     };
 
@@ -294,17 +349,29 @@ const MOD = () => {
     Actinium.Hook.register('schema', async () => {
         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
 
-        await Actinium.Collection.register(
-            '_User',
-            PLUGIN_SCHEMA.ACTIONS,
-            PLUGIN_SCHEMA.SCHEMA,
-            PLUGIN_SCHEMA.INDEX,
-        );
+        for (const item of PLUGIN_SCHEMA) {
+            const context = _.clone(item);
+
+            const hookID = String(context.collection)
+                .replace(/\-+|\_+/g, '-')
+                .replace(/\-+/g, '-')
+                .replace(/^([\-|\_])([a-zA-Z])/gm, '$2')
+                .toLowerCase();
+
+            await Actinium.Hook.run(`schema-${hookID}`, context);
+
+            Actinium.Collection.register(
+                context.collection,
+                context.actions,
+                context.schema,
+            );
+        }
     });
 
     Actinium.Hook.register('collection-clp', async ({ collection, CLP }) => {
-        if (!Actinium.Plugin.isActive(PLUGIN.ID) || collection !== '_User')
+        if (!Actinium.Plugin.isActive(PLUGIN.ID) || collection !== '_User') {
             return;
+        }
 
         // Update CLP
         Object.keys(CLP).forEach((key) => {
@@ -313,61 +380,60 @@ const MOD = () => {
         });
     });
 
-    Actinium.Hook.register('start', async () => {
-        if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+    // Actinium.Hook.register('start', async () => {
+    //     if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
 
-        return Actinium.Cloud.run(
-            'acl-targets',
-            { cache: true },
-            { useMasterKey: true },
-        );
-    });
+    //     return Actinium.Cloud.run(
+    //         'acl-targets',
+    //         { cache: true },
+    //         { useMasterKey: true },
+    //     );
+    // });
 
     Actinium.Hook.register('warning', async () => {
         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
-
         return Actinium.User.init();
     });
 
-    Actinium.Hook.register('content-trashed', async (contentObj, typeObj) => {
-        if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+    // Actinium.Hook.register('content-trashed', async (contentObj, typeObj) => {
+    //     if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
 
-        const user = op.has(contentObj, 'user')
-            ? await Actinium.User.retrieve({
-                  objectId: contentObj.user.objectId,
-              })
-            : false;
+    //     const user = op.has(contentObj, 'user')
+    //         ? await Actinium.User.retrieve({
+    //               objectId: contentObj.user.objectId,
+    //           })
+    //         : false;
 
-        if (!user) return;
+    //     if (!user) return;
 
-        const key = ['content', typeObj.objectId, contentObj.objectId];
-        Actinium.User.Meta.delete(
-            { objectId: user.objectId, keys: key.join('.') },
-            MasterOptions(),
-        );
-    });
+    //     const key = ['content', typeObj.objectId, contentObj.objectId];
+    //     Actinium.User.Meta.delete(
+    //         { objectId: user.objectId, keys: key.join('.') },
+    //         MasterOptions(),
+    //     );
+    // });
 
-    Actinium.Hook.register(
-        'user-before-save',
-        (req) => {
-            if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
-            return createAvatar(req);
-        },
-        0,
-    );
+    // Actinium.Hook.register(
+    //     'user-before-save',
+    //     (req) => {
+    //         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+    //         return createAvatar(req);
+    //     },
+    //     0,
+    // );
 
-    Actinium.Hook.register(
-        'user-after-save',
-        async () => {
-            if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
-            Actinium.Cloud.run(
-                'acl-targets',
-                { cache: true },
-                { useMasterKey: true },
-            );
-        },
-        0,
-    );
+    // Actinium.Hook.register(
+    //     'user-after-save',
+    //     async () => {
+    //         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
+    //         Actinium.Cloud.run(
+    //             'acl-targets',
+    //             { cache: true },
+    //             { useMasterKey: true },
+    //         );
+    //     },
+    //     0,
+    // );
 
     Actinium.Hook.register(
         'user-after-save',
