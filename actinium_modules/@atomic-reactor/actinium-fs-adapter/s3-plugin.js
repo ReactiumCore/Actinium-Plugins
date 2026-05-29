@@ -24,7 +24,7 @@ const MOD = () => {
         },
     };
 
-    const _addStaticAssets = plugin => {
+    const _addStaticAssets = (plugin) => {
         op.set(
             plugin,
             'meta.assets.admin.logo',
@@ -44,15 +44,20 @@ const MOD = () => {
 
     _addStaticAssets(PLUGIN);
 
-    Actinium.FilesAdapter.register(PLUGIN, async config => {
+    Actinium.FilesAdapter.register(PLUGIN, async () => {
         if (!Actinium.Plugin.isActive(PLUGIN.ID)) return;
 
-        const settings = await Actinium.Setting.get('S3Adapter', {});
+        const { value: settings = {} } = await Actinium.Setting.get(
+            'S3Adapter',
+            { value: { directAccess: true } },
+        );
+
+        await Actinium.Hook.run('s3-config', settings);
         
         return new S3Adapter(settings);
     });
 
-    Actinium.Hook.register('plugin-assets-middleware', async app => {
+    Actinium.Hook.register('plugin-assets-middleware', async (app) => {
         const router = express.Router();
         router.use(
             `/${PLUGIN.ID}`,
